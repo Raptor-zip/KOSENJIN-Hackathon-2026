@@ -1,4 +1,5 @@
-import { AlertTriangleIcon } from './Icons';
+import { useState, useEffect } from 'react';
+import { AlertTriangleIcon, StopIcon } from './Icons';
 
 const STROKE_SHADOW = '3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000, 0 3px 0 #000, 0 -3px 0 #000, 3px 0 0 #000, -3px 0 0 #000';
 const STROKE_SHADOW_SM = '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 2px 0 0 #000, -2px 0 0 #000';
@@ -7,6 +8,28 @@ interface MonitoringScreenProps {
   ear: number;
   drowsySeconds: number;
   faceDetected: boolean;
+  onStop: () => void;
+  sessionStartedAt: number;
+}
+
+function formatElapsed(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  if (h > 0) return `${h}:${mm}:${ss}`;
+  return `${mm}:${ss}`;
+}
+
+function useClock() {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
 }
 
 function getDrowsinessLevel(ear: number): {
@@ -32,9 +55,18 @@ export function MonitoringScreen({
   ear,
   drowsySeconds,
   faceDetected,
+  onStop,
+  sessionStartedAt,
 }: MonitoringScreenProps) {
   const isDrowsy = drowsySeconds > 0;
   const level = getDrowsinessLevel(ear);
+  const now = useClock();
+
+  const dateObj = new Date(now);
+  const dateStr = `${dateObj.getFullYear()}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+  const weekday = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
+  const timeStr = dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const elapsed = sessionStartedAt > 0 ? now - sessionStartedAt : 0;
 
   return (
     <div className="absolute inset-0 z-10 pointer-events-none flex flex-col">
@@ -56,8 +88,41 @@ export function MonitoringScreen({
             {faceDetected ? '顔を検出中' : '顔が見つかりません'}
           </span>
         </div>
-        <div className="px-4 py-1.5 bg-dark-surface/80 backdrop-blur rounded-full border border-dark-border">
-          <span className="text-base text-neon-blue font-mono font-bold">MONITORING</span>
+        <div className="flex items-center gap-2">
+          <div className="px-4 py-1.5 bg-dark-surface/80 backdrop-blur rounded-full border border-dark-border">
+            <span className="text-base text-neon-blue font-mono font-bold">MONITORING</span>
+          </div>
+          <button
+            onClick={onStop}
+            className="pointer-events-auto p-2 bg-dark-surface/80 backdrop-blur rounded-full border border-dark-border text-gray-400 hover:text-neon-red transition-colors"
+            aria-label="停止"
+          >
+            <StopIcon className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Clock / work timer bar */}
+      <div className="relative px-4 pb-2 z-10 flex items-center justify-between">
+        {/* Date & time */}
+        <div className="bg-dark-surface/80 backdrop-blur rounded-xl border border-dark-border px-3 py-2">
+          <p className="text-xs text-gray-400 font-mono leading-none">{dateStr} ({weekday})</p>
+          <p
+            className="text-2xl font-bold text-white font-mono leading-tight mt-0.5"
+            style={{ textShadow: STROKE_SHADOW_SM }}
+          >
+            {timeStr}
+          </p>
+        </div>
+        {/* Elapsed work time */}
+        <div className="bg-dark-surface/80 backdrop-blur rounded-xl border border-dark-border px-3 py-2 text-right">
+          <p className="text-xs text-gray-400 font-mono leading-none">作業時間</p>
+          <p
+            className="text-2xl font-bold text-neon-blue font-mono leading-tight mt-0.5"
+            style={{ textShadow: STROKE_SHADOW_SM }}
+          >
+            {formatElapsed(elapsed)}
+          </p>
         </div>
       </div>
 

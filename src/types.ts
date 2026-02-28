@@ -1,6 +1,33 @@
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
 
-export type AppState = 'start' | 'monitoring' | 'penalty';
+export type AppState = 'start' | 'monitoring' | 'penalty' | 'dashboard';
+
+export interface DrowsinessEvent {
+  timestamp: number;
+  durationMs: number;
+}
+
+export interface SquatEvent {
+  timestamp: number;
+  count: number;
+  durationMs: number;
+}
+
+export interface Session {
+  id: string;
+  startedAt: number;
+  endedAt: number | null;
+  drowsinessEvents: DrowsinessEvent[];
+  squatEvents: SquatEvent[];
+}
+
+export interface DailySummary {
+  date: string;         // 'YYYY-MM-DD'
+  totalWorkMs: number;
+  totalDrowsy: number;
+  totalSquats: number;
+  sessions: string[];
+}
 
 export interface EARResult {
   left: number;

@@ -13,6 +13,12 @@ import { usePoseLandmarker } from './hooks/usePoseLandmarker';
 import { StartScreen } from './components/StartScreen';
 import { MonitoringScreen } from './components/MonitoringScreen';
 import { PenaltyScreen } from './components/PenaltyScreen';
+import { DashboardScreen } from './components/DashboardScreen';
+import { captureScreenshot } from './utils/captureScreenshot';
+import { sendDiscordWebhook } from './utils/sendDiscordWebhook';
+import { getWebhookUrl, isValidWebhookUrl } from './utils/webhookSettings';
+import { WebhookToast } from './components/WebhookToast';
+import { useSessionLogger } from './hooks/useSessionLogger';
 
 const EAR_THRESHOLD_LOW = 0.20;   // Enter drowsy state below this
 const EAR_THRESHOLD_HIGH = 0.24;  // Exit drowsy state above this (hysteresis)
@@ -29,6 +35,12 @@ function App() {
   const [isSquatting, setIsSquatting] = useState(false);
   const [kneeAngle, setKneeAngle] = useState(180);
   const [fullBodyVisible, setFullBodyVisible] = useState(true);
+  const [monitoringStartedAt, setMonitoringStartedAt] = useState(0);
+  const [webhookToast, setWebhookToast] = useState<{
+    imageUrl: string;
+    message: string;
+    success: boolean;
+  } | null>(null);
 
   const { videoRef, startCamera, attachStream } = useCamera();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,10 +49,22 @@ function App() {
   const faceLandmarker = useFaceLandmarker();
   const poseLandmarker = usePoseLandmarker();
 
+  const { startSession, logDrowsiness, logSquatCompletion, endSession } = useSessionLogger();
+
   const animFrameRef = useRef(0);
   const drowsyStartRef = useRef<number | null>(null);
   const lastTimestampRef = useRef(0);
   const isDrowsyRef = useRef(false);
+  const prevAppStateRef = useRef<AppState>('start');
+
+  // Guard against browser close with active session
+  useEffect(() => {
+    const handler = () => {
+      endSession();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [endSession]);
 
   // --- Canvas helpers ---
   const getDrawingUtils = useCallback(() => {
@@ -241,10 +265,43 @@ function App() {
 
   // --- State transition effects ---
   useEffect(() => {
+    const prev = prevAppStateRef.current;
+    prevAppStateRef.current = appState;
+
+    // Discord webhook notifications with toast feedback
+    const sendWithToast = async (message: string) => {
+      const url = getWebhookUrl();
+      if (!url || !isValidWebhookUrl(url)) return;
+
+      const video = videoRef.current;
+      if (!video) return;
+
+      const blob = await captureScreenshot(video);
+      const imageUrl = URL.createObjectURL(blob);
+      const success = await sendDiscordWebhook(message, blob);
+      setWebhookToast({ imageUrl, message, success });
+    };
+
+    if (prev === 'start' && appState === 'monitoring') {
+      startSession();
+    }
+    if (prev === 'monitoring' && appState === 'penalty') {
+      logDrowsiness(DROWSY_DURATION_SEC * 1000);
+      sendWithToast('居眠りを検知しました！');
+    }
+    if (prev === 'penalty' && appState === 'monitoring') {
+      logSquatCompletion(REQUIRED_SQUATS);
+      sendWithToast('スクワット5回完了！');
+    }
+    if (prev === 'monitoring' && appState === 'start') {
+      endSession();
+    }
+
     // Reset drawing utils when canvas remounts
     drawingUtilsRef.current = null;
 
     if (appState === 'monitoring') {
+      if (prev === 'start') setMonitoringStartedAt(Date.now());
       setDrowsySeconds(0);
       drowsyStartRef.current = null;
       isDrowsyRef.current = false;
@@ -297,7 +354,30 @@ function App() {
     }
   }, [unlockAudio, startCamera]);
 
-  const showVideo = appState !== 'start';
+  const handleStop = useCallback(() => {
+    cancelAnimationFrame(animFrameRef.current);
+    clearCanvas();
+    faceLandmarker.close();
+    stopAlarm();
+    setAppState('start');
+  }, [clearCanvas, faceLandmarker, stopAlarm]);
+
+  const handleDashboard = useCallback(() => {
+    setAppState('dashboard');
+  }, []);
+
+  const handleDashboardBack = useCallback(() => {
+    setAppState('start');
+  }, []);
+
+  const handleToastDone = useCallback(() => {
+    setWebhookToast((prev) => {
+      if (prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl);
+      return null;
+    });
+  }, []);
+
+  const showVideo = appState === 'monitoring' || appState === 'penalty';
 
   return (
     <div className="h-screen w-screen bg-dark-bg text-white relative overflow-hidden">
@@ -322,13 +402,18 @@ function App() {
 
       {/* State-specific overlays */}
       {appState === 'start' && (
-        <StartScreen onStart={handleStart} loading={loading} />
+        <StartScreen onStart={handleStart} loading={loading} onDashboard={handleDashboard} />
+      )}
+      {appState === 'dashboard' && (
+        <DashboardScreen onBack={handleDashboardBack} />
       )}
       {appState === 'monitoring' && (
         <MonitoringScreen
           ear={ear}
           drowsySeconds={drowsySeconds}
           faceDetected={faceDetected}
+          onStop={handleStop}
+          sessionStartedAt={monitoringStartedAt}
         />
       )}
       {appState === 'penalty' && (
@@ -337,6 +422,15 @@ function App() {
           requiredSquats={REQUIRED_SQUATS}
           isSquatting={isSquatting}
           fullBodyVisible={fullBodyVisible}
+        />
+      )}
+
+      {webhookToast && (
+        <WebhookToast
+          imageUrl={webhookToast.imageUrl}
+          message={webhookToast.message}
+          success={webhookToast.success}
+          onDone={handleToastDone}
         />
       )}
     </div>

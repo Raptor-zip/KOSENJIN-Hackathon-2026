@@ -1,11 +1,16 @@
-import { EyeIcon, PlayIcon, CameraIcon, VolumeIcon, CpuIcon } from './Icons';
+import { useState } from 'react';
+import { EyeIcon, PlayIcon, CameraIcon, VolumeIcon, CpuIcon, SettingsIcon, ChartIcon } from './Icons';
+import { SettingsModal } from './SettingsModal';
 
 interface StartScreenProps {
   onStart: () => void;
   loading: boolean;
+  onDashboard: () => void;
 }
 
-export function StartScreen({ onStart, loading }: StartScreenProps) {
+export function StartScreen({ onStart, loading, onDashboard }: StartScreenProps) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   return (
     <div className="h-full w-full flex flex-col items-center justify-center bg-dark-bg relative overflow-hidden">
       {/* Background glow effects */}
@@ -13,6 +18,24 @@ export function StartScreen({ onStart, loading }: StartScreenProps) {
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-neon-blue/10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-64 h-64 bg-neon-purple/10 rounded-full blur-3xl" />
       </div>
+
+      {/* Dashboard button — top-left */}
+      <button
+        onClick={onDashboard}
+        className="absolute top-4 left-4 z-20 p-2 rounded-lg bg-dark-surface/80 border border-dark-border text-gray-400 hover:text-white transition-colors"
+        aria-label="ダッシュボード"
+      >
+        <ChartIcon className="w-5 h-5" />
+      </button>
+
+      {/* Settings button — top-right */}
+      <button
+        onClick={() => setSettingsOpen(true)}
+        className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-dark-surface/80 border border-dark-border text-gray-400 hover:text-white transition-colors"
+        aria-label="設定"
+      >
+        <SettingsIcon className="w-5 h-5" />
+      </button>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 px-6">
@@ -79,6 +102,9 @@ export function StartScreen({ onStart, loading }: StartScreenProps) {
           </span>
         </div>
       </div>
+
+      {/* Settings modal */}
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
