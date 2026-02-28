@@ -301,14 +301,12 @@ function App() {
           if (localSquatCount >= REQUIRED_SQUATS) {
             cancelAnimationFrame(animFrameRef.current);
             clearCanvas();
-            // Show the last pop (残り0) before the CLEAR screen
+            stopAlarm();
+            setPenaltyComplete(true);
             setTimeout(() => {
-              setPenaltyComplete(true);
-              setTimeout(() => {
-                setPenaltyComplete(false);
-                setAppState('monitoring');
-              }, 5000);
-            }, 1800);
+              setPenaltyComplete(false);
+              setAppState('monitoring');
+            }, 3000);
             return;
           }
         }
@@ -317,7 +315,7 @@ function App() {
       animFrameRef.current = requestAnimationFrame(loop);
     };
     animFrameRef.current = requestAnimationFrame(loop);
-  }, [poseLandmarker, videoRef, drawPoseLandmarks, clearCanvas]);
+  }, [poseLandmarker, videoRef, drawPoseLandmarks, clearCanvas, stopAlarm]);
 
   // --- Head tilt penalty loop ---
   const runHeadTiltPenaltyLoop = useCallback(() => {
@@ -352,13 +350,12 @@ function App() {
           if (localTiltCount >= REQUIRED_SQUATS) {
             cancelAnimationFrame(animFrameRef.current);
             clearCanvas();
+            stopAlarm();
+            setPenaltyComplete(true);
             setTimeout(() => {
-              setPenaltyComplete(true);
-              setTimeout(() => {
-                setPenaltyComplete(false);
-                setAppState('monitoring');
-              }, 5000);
-            }, 1800);
+              setPenaltyComplete(false);
+              setAppState('monitoring');
+            }, 3000);
             return;
           }
         }
@@ -367,7 +364,7 @@ function App() {
       animFrameRef.current = requestAnimationFrame(loop);
     };
     animFrameRef.current = requestAnimationFrame(loop);
-  }, [headTiltDetector, videoRef, drawFaceLandmarks, clearCanvas]);
+  }, [headTiltDetector, videoRef, drawFaceLandmarks, clearCanvas, stopAlarm]);
 
   // --- State transition effects ---
   useEffect(() => {
