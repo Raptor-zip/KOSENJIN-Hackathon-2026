@@ -7,6 +7,8 @@ import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
 import type { SquatResult } from '../types';
 
 // MediaPipe Pose landmark indices
+const LEFT_SHOULDER = 11;
+const RIGHT_SHOULDER = 12;
 const LEFT_HIP = 23;
 const RIGHT_HIP = 24;
 const LEFT_KNEE = 25;
@@ -14,9 +16,28 @@ const RIGHT_KNEE = 26;
 const LEFT_ANKLE = 27;
 const RIGHT_ANKLE = 28;
 
+/** Required landmarks for full body: shoulders, hips, knees, ankles */
+const FULL_BODY_INDICES = [
+  LEFT_SHOULDER, RIGHT_SHOULDER,
+  LEFT_HIP, RIGHT_HIP,
+  LEFT_KNEE, RIGHT_KNEE,
+  LEFT_ANKLE, RIGHT_ANKLE,
+];
+
+/** Min visibility score per landmark to consider it "visible" */
+const VISIBILITY_THRESHOLD = 0.5;
+
+/** Angle thresholds with hysteresis to prevent flickering */
+const SQUAT_ANGLE_ENTER = 100;   // Both knees must bend below this to enter squat
+const SQUAT_ANGLE_EXIT = 150;    // Both knees must straighten above this to count as stood up
+
 // --- Squat detection stabilization ---
-const SQUAT_COOLDOWN_MS = 800;         // min time between counted squats
-const STABLE_FRAMES_REQUIRED = 3;      // frames a state must hold to be "real"
+const SQUAT_COOLDOWN_MS = 1500;        // min time between counted squats
+const STABLE_FRAMES_REQUIRED = 6;      // frames a state must hold to be "real" (~200ms at 30fps)
+
+// --- Full-body visibility stabilization ---
+const BODY_VISIBLE_FRAMES = 10;        // frames body must be visible to flip to "visible" (~330ms)
+const BODY_HIDDEN_FRAMES = 15;         // frames body must be hidden to flip to "hidden" (~500ms)
 
 function computeAngle(
   a: { x: number; y: number },
@@ -59,11 +80,19 @@ export function usePoseLandmarker() {
   const stableSquatting = useRef(false);   // debounced squat state
   const lastCountTime = useRef(0);         // timestamp of last counted squat
 
+  // Full-body visibility stabilization
+  const rawBodyVisibleFrames = useRef(0);
+  const rawBodyHiddenFrames = useRef(0);
+  const stableBodyVisible = useRef(false);
+
   const resetStabilization = useCallback(() => {
     rawSquatFrames.current = 0;
     rawStandFrames.current = 0;
     stableSquatting.current = false;
     lastCountTime.current = 0;
+    rawBodyVisibleFrames.current = 0;
+    rawBodyHiddenFrames.current = 0;
+    stableBodyVisible.current = false;
   }, []);
 
   const init = useCallback(async () => {
@@ -112,37 +141,77 @@ export function usePoseLandmarker() {
         const leftAnkle = landmarks[LEFT_ANKLE];
         const rightAnkle = landmarks[RIGHT_ANKLE];
 
+        // Check full body visibility (raw per-frame)
+        const rawBodyVisible = FULL_BODY_INDICES.every(
+          (idx) => (landmarks[idx].visibility ?? 0) >= VISIBILITY_THRESHOLD,
+        );
+
+        // Stabilize full-body visibility to prevent flickering
+        if (rawBodyVisible) {
+          rawBodyVisibleFrames.current++;
+          rawBodyHiddenFrames.current = 0;
+        } else {
+          rawBodyHiddenFrames.current++;
+          rawBodyVisibleFrames.current = 0;
+        }
+        if (!stableBodyVisible.current && rawBodyVisibleFrames.current >= BODY_VISIBLE_FRAMES) {
+          stableBodyVisible.current = true;
+        }
+        if (stableBodyVisible.current && rawBodyHiddenFrames.current >= BODY_HIDDEN_FRAMES) {
+          stableBodyVisible.current = false;
+        }
+        const fullBodyVisible = stableBodyVisible.current;
+
         const hipY = (leftHip.y + rightHip.y) / 2;
         const leftAngle = computeAngle(leftHip, leftKnee, leftAnkle);
         const rightAngle = computeAngle(rightHip, rightKnee, rightAnkle);
         const kneeAngle = (leftAngle + rightAngle) / 2;
 
-        const rawIsSquatting = kneeAngle < 120;
+        let counted = false;
 
-        // --- Stabilization: require N consecutive frames to confirm state ---
-        if (rawIsSquatting) {
-          rawSquatFrames.current++;
+        // Only run squat detection when full body is visible
+        if (!fullBodyVisible) {
+          // Reset everything — noisy partial detections must not accumulate
+          rawSquatFrames.current = 0;
           rawStandFrames.current = 0;
         } else {
-          rawStandFrames.current++;
-          rawSquatFrames.current = 0;
-        }
+          // Hysteresis: different thresholds for entering/exiting squat
+          const rawIsSquatting =
+            leftAngle < SQUAT_ANGLE_ENTER &&
+            rightAngle < SQUAT_ANGLE_ENTER;
 
-        const prevStable = stableSquatting.current;
-        if (!stableSquatting.current && rawSquatFrames.current >= STABLE_FRAMES_REQUIRED) {
-          stableSquatting.current = true;
-        }
-        if (stableSquatting.current && rawStandFrames.current >= STABLE_FRAMES_REQUIRED) {
-          stableSquatting.current = false;
-        }
+          const rawIsStanding =
+            leftAngle > SQUAT_ANGLE_EXIT &&
+            rightAngle > SQUAT_ANGLE_EXIT;
 
-        // Count a squat: stable transition squat→stand with cooldown
-        let counted = false;
-        if (prevStable && !stableSquatting.current) {
-          const now = performance.now();
-          if (now - lastCountTime.current >= SQUAT_COOLDOWN_MS) {
-            counted = true;
-            lastCountTime.current = now;
+          // --- Stabilization: require N consecutive frames to confirm state ---
+          if (rawIsSquatting) {
+            rawSquatFrames.current++;
+            rawStandFrames.current = 0;
+          } else if (rawIsStanding) {
+            rawStandFrames.current++;
+            rawSquatFrames.current = 0;
+          } else {
+            // In the dead zone — don't count toward either state
+            rawSquatFrames.current = 0;
+            rawStandFrames.current = 0;
+          }
+
+          const prevStable = stableSquatting.current;
+          if (!stableSquatting.current && rawSquatFrames.current >= STABLE_FRAMES_REQUIRED) {
+            stableSquatting.current = true;
+          }
+          if (stableSquatting.current && rawStandFrames.current >= STABLE_FRAMES_REQUIRED) {
+            stableSquatting.current = false;
+          }
+
+          // Count a squat: stable transition squat→stand with cooldown
+          if (prevStable && !stableSquatting.current) {
+            const now = performance.now();
+            if (now - lastCountTime.current >= SQUAT_COOLDOWN_MS) {
+              counted = true;
+              lastCountTime.current = now;
+            }
           }
         }
 
@@ -152,6 +221,7 @@ export function usePoseLandmarker() {
           kneeAngle,
           landmarks,
           counted,
+          fullBodyVisible,
         };
       } catch {
         return null;

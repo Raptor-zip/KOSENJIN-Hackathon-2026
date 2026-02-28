@@ -14,4 +14,5 @@ export interface SquatResult {
   hipY: number;
   kneeAngle: number;
   landmarks: NormalizedLandmark[];
+  fullBodyVisible: boolean;
 }

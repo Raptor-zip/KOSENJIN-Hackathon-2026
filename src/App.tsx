@@ -14,7 +14,8 @@ import { StartScreen } from './components/StartScreen';
 import { MonitoringScreen } from './components/MonitoringScreen';
 import { PenaltyScreen } from './components/PenaltyScreen';
 
-const EAR_THRESHOLD = 0.2;
+const EAR_THRESHOLD_LOW = 0.20;   // Enter drowsy state below this
+const EAR_THRESHOLD_HIGH = 0.24;  // Exit drowsy state above this (hysteresis)
 const DROWSY_DURATION_SEC = 3;
 const REQUIRED_SQUATS = 5;
 
@@ -27,6 +28,7 @@ function App() {
   const [squatCount, setSquatCount] = useState(0);
   const [isSquatting, setIsSquatting] = useState(false);
   const [kneeAngle, setKneeAngle] = useState(180);
+  const [fullBodyVisible, setFullBodyVisible] = useState(true);
 
   const { videoRef, startCamera, attachStream } = useCamera();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,6 +40,7 @@ function App() {
   const animFrameRef = useRef(0);
   const drowsyStartRef = useRef<number | null>(null);
   const lastTimestampRef = useRef(0);
+  const isDrowsyRef = useRef(false);
 
   // --- Canvas helpers ---
   const getDrawingUtils = useCallback(() => {
@@ -156,7 +159,14 @@ function App() {
         setEar(result.average);
         drawFaceLandmarks(result.landmarks);
 
-        if (result.average < EAR_THRESHOLD) {
+        // Hysteresis: different thresholds for entering/exiting drowsy state
+        if (!isDrowsyRef.current && result.average < EAR_THRESHOLD_LOW) {
+          isDrowsyRef.current = true;
+        } else if (isDrowsyRef.current && result.average > EAR_THRESHOLD_HIGH) {
+          isDrowsyRef.current = false;
+        }
+
+        if (isDrowsyRef.current) {
           if (drowsyStartRef.current === null) {
             drowsyStartRef.current = now;
           }
@@ -175,6 +185,7 @@ function App() {
         }
       } else {
         setFaceDetected(false);
+        isDrowsyRef.current = false;
         clearCanvas();
       }
 
@@ -206,6 +217,7 @@ function App() {
       if (result) {
         setIsSquatting(result.isSquatting);
         setKneeAngle(result.kneeAngle);
+        setFullBodyVisible(result.fullBodyVisible);
         drawPoseLandmarks(result.landmarks);
 
         // The hook handles debounce + cooldown and tells us when to count
@@ -235,6 +247,7 @@ function App() {
     if (appState === 'monitoring') {
       setDrowsySeconds(0);
       drowsyStartRef.current = null;
+      isDrowsyRef.current = false;
       lastTimestampRef.current = 0;
       stopAlarm();
 
@@ -323,6 +336,7 @@ function App() {
           squatCount={squatCount}
           requiredSquats={REQUIRED_SQUATS}
           isSquatting={isSquatting}
+          fullBodyVisible={fullBodyVisible}
         />
       )}
     </div>

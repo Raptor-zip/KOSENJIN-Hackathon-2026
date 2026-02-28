@@ -57,11 +57,15 @@ function pickCenterFace(faces: NormalizedLandmark[][]): NormalizedLandmark[] {
   return faces[bestIdx];
 }
 
+/** EMA smoothing factor — lower = smoother but more lag (0.0–1.0) */
+const EMA_ALPHA = 0.25;
+
 export function useFaceLandmarker() {
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
   const wasmFilesetRef = useRef<Awaited<
     ReturnType<typeof FilesetResolver.forVisionTasks>
   > | null>(null);
+  const smoothedEarRef = useRef<number | null>(null);
 
   const init = useCallback(async () => {
     if (landmarkerRef.current) return landmarkerRef.current;
@@ -110,7 +114,16 @@ export function useFaceLandmarker() {
 
         const leftEAR = computeEAR(landmarks, LEFT_EYE_INDICES);
         const rightEAR = computeEAR(landmarks, RIGHT_EYE_INDICES);
-        const average = (leftEAR + rightEAR) / 2;
+        const rawAverage = (leftEAR + rightEAR) / 2;
+
+        // Apply EMA smoothing to reduce frame-to-frame jitter
+        if (smoothedEarRef.current === null) {
+          smoothedEarRef.current = rawAverage;
+        } else {
+          smoothedEarRef.current =
+            EMA_ALPHA * rawAverage + (1 - EMA_ALPHA) * smoothedEarRef.current;
+        }
+        const average = smoothedEarRef.current;
 
         return { left: leftEAR, right: rightEAR, average, landmarks };
       } catch {
@@ -123,6 +136,7 @@ export function useFaceLandmarker() {
   const close = useCallback(() => {
     landmarkerRef.current?.close();
     landmarkerRef.current = null;
+    smoothedEarRef.current = null;
   }, []);
 
   return { init, detectEAR, close, landmarkerRef };
