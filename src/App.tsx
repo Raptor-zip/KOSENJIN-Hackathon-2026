@@ -34,11 +34,13 @@ function App() {
   const [drowsySeconds, setDrowsySeconds] = useState(0);
   const [faceDetected, setFaceDetected] = useState(false);
   const [squatCount, setSquatCount] = useState(0);
+  const [penaltyComplete, setPenaltyComplete] = useState(false);
   const [isSquatting, setIsSquatting] = useState(false);
   const [kneeAngle, setKneeAngle] = useState(180);
   const [fullBodyVisible, setFullBodyVisible] = useState(true);
   const [exerciseMode, setExerciseMode] = useState<ExerciseMode>(getExerciseMode);
   const [isTilted, setIsTilted] = useState(false);
+  const [tiltAngle, setTiltAngle] = useState(0);
   const [upperBodyVisible, setUpperBodyVisible] = useState(true);
   const [monitoringStartedAt, setMonitoringStartedAt] = useState(0);
   const [webhookToast, setWebhookToast] = useState<{
@@ -50,6 +52,7 @@ function App() {
   const { videoRef, startCamera, attachStream } = useCamera();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingUtilsRef = useRef<DrawingUtils | null>(null);
+  const maskCanvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'));
   const { unlockAudio, startAlarm, stopAlarm } = useAlarm();
   const faceLandmarker = useFaceLandmarker();
   const poseLandmarker = usePoseLandmarker();
@@ -143,9 +146,42 @@ function App() {
   );
 
   const drawPoseLandmarks = useCallback(
-    (landmarks: NormalizedLandmark[]) => {
+    (
+      landmarks: NormalizedLandmark[],
+      segmentationMask?: Float32Array | null,
+      maskWidth?: number,
+      maskHeight?: number,
+    ) => {
       syncCanvasSize();
       clearCanvas();
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      // Draw segmentation mask overlay
+      if (ctx && segmentationMask && maskWidth && maskHeight) {
+        const imageData = ctx.createImageData(maskWidth, maskHeight);
+        const data = imageData.data;
+        for (let i = 0; i < segmentationMask.length; i++) {
+          const confidence = segmentationMask[i];
+          const px = i * 4;
+          // Neon cyan overlay: rgb(0, 212, 255) with confidence-based alpha
+          data[px] = 0;
+          data[px + 1] = 212;
+          data[px + 2] = 255;
+          data[px + 3] = confidence > 0.3 ? confidence * 80 : 0;
+        }
+        // Draw mask scaled to canvas size
+        const tmpCanvas = maskCanvasRef.current;
+        if (tmpCanvas.width !== maskWidth || tmpCanvas.height !== maskHeight) {
+          tmpCanvas.width = maskWidth;
+          tmpCanvas.height = maskHeight;
+        }
+        tmpCanvas.getContext('2d')!.putImageData(imageData, 0, 0);
+        ctx.drawImage(tmpCanvas, 0, 0, canvas.width, canvas.height);
+      }
+
       const du = getDrawingUtils();
       if (!du) return;
 
@@ -249,11 +285,13 @@ function App() {
 
       const result = poseLandmarker.detectSquat(video, now);
 
-      if (result) {
+      if (!result) {
+        setFullBodyVisible(false);
+      } else {
         setIsSquatting(result.isSquatting);
         setKneeAngle(result.kneeAngle);
         setFullBodyVisible(result.fullBodyVisible);
-        drawPoseLandmarks(result.landmarks);
+        drawPoseLandmarks(result.landmarks, result.segmentationMask, result.maskWidth, result.maskHeight);
 
         // The hook handles debounce + cooldown and tells us when to count
         if (result.counted) {
@@ -263,7 +301,14 @@ function App() {
           if (localSquatCount >= REQUIRED_SQUATS) {
             cancelAnimationFrame(animFrameRef.current);
             clearCanvas();
-            setAppState('monitoring');
+            // Show the last pop (残り0) before the CLEAR screen
+            setTimeout(() => {
+              setPenaltyComplete(true);
+              setTimeout(() => {
+                setPenaltyComplete(false);
+                setAppState('monitoring');
+              }, 5000);
+            }, 1800);
             return;
           }
         }
@@ -296,8 +341,9 @@ function App() {
 
       if (result) {
         setIsTilted(result.isTilted);
+        setTiltAngle(result.tiltAngle);
         setUpperBodyVisible(result.upperBodyVisible);
-        drawPoseLandmarks(result.landmarks);
+        drawFaceLandmarks(result.landmarks);
 
         if (result.counted) {
           localTiltCount++;
@@ -306,7 +352,13 @@ function App() {
           if (localTiltCount >= REQUIRED_SQUATS) {
             cancelAnimationFrame(animFrameRef.current);
             clearCanvas();
-            setAppState('monitoring');
+            setTimeout(() => {
+              setPenaltyComplete(true);
+              setTimeout(() => {
+                setPenaltyComplete(false);
+                setAppState('monitoring');
+              }, 5000);
+            }, 1800);
             return;
           }
         }
@@ -315,7 +367,7 @@ function App() {
       animFrameRef.current = requestAnimationFrame(loop);
     };
     animFrameRef.current = requestAnimationFrame(loop);
-  }, [headTiltDetector, videoRef, drawPoseLandmarks, clearCanvas]);
+  }, [headTiltDetector, videoRef, drawFaceLandmarks, clearCanvas]);
 
   // --- State transition effects ---
   useEffect(() => {
@@ -372,8 +424,11 @@ function App() {
 
     if (appState === 'penalty') {
       setSquatCount(0);
+      setPenaltyComplete(false);
       setIsSquatting(false);
       setIsTilted(false);
+      setFullBodyVisible(false);
+      setUpperBodyVisible(false);
       lastTimestampRef.current = 0;
       startAlarm();
 
@@ -426,6 +481,7 @@ function App() {
     poseLandmarker.close();
     headTiltDetector.close();
     stopAlarm();
+    setPenaltyComplete(false);
     setAppState('start');
   }, [clearCanvas, faceLandmarker, poseLandmarker, headTiltDetector, stopAlarm]);
 
@@ -489,7 +545,7 @@ function App() {
           sessionStartedAt={monitoringStartedAt}
         />
       )}
-      {appState === 'penalty' && (
+      {(appState === 'penalty' || penaltyComplete) && (
         <PenaltyScreen
           squatCount={squatCount}
           requiredSquats={REQUIRED_SQUATS}
@@ -497,7 +553,9 @@ function App() {
           fullBodyVisible={fullBodyVisible}
           exerciseMode={exerciseMode}
           isTilted={isTilted}
+          tiltAngle={tiltAngle}
           upperBodyVisible={upperBodyVisible}
+          penaltyComplete={penaltyComplete}
         />
       )}
 

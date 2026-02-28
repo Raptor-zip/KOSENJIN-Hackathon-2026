@@ -16,9 +16,8 @@ const RIGHT_KNEE = 26;
 const LEFT_ANKLE = 27;
 const RIGHT_ANKLE = 28;
 
-/** Required landmarks for full body: shoulders, hips, knees, ankles */
+/** Required landmarks for squat detection: hips, knees, ankles */
 const FULL_BODY_INDICES = [
-  LEFT_SHOULDER, RIGHT_SHOULDER,
   LEFT_HIP, RIGHT_HIP,
   LEFT_KNEE, RIGHT_KNEE,
   LEFT_ANKLE, RIGHT_ANKLE,
@@ -26,6 +25,18 @@ const FULL_BODY_INDICES = [
 
 /** Min visibility score per landmark to consider it "visible" */
 const VISIBILITY_THRESHOLD = 0.5;
+
+/** Margin for in-frame check — landmarks near edges are unreliable */
+const FRAME_MARGIN = 0.02;
+
+/** Check if a landmark is both confident AND within the camera frame */
+function isLandmarkVisible(lm: NormalizedLandmark): boolean {
+  if ((lm.visibility ?? 0) < VISIBILITY_THRESHOLD) return false;
+  // Reject landmarks that MediaPipe "guessed" outside the visible frame
+  if (lm.x < -FRAME_MARGIN || lm.x > 1 + FRAME_MARGIN) return false;
+  if (lm.y < -FRAME_MARGIN || lm.y > 1 + FRAME_MARGIN) return false;
+  return true;
+}
 
 /** Angle thresholds with hysteresis to prevent flickering */
 const SQUAT_ANGLE_ENTER = 100;   // Both knees must bend below this to enter squat
@@ -54,9 +65,9 @@ function computeAngle(
   return (Math.acos(cosAngle) * 180) / Math.PI;
 }
 
-/** Pick the pose whose hip center-X is closest to 0.5. */
-function pickCenterPose(poses: NormalizedLandmark[][]): NormalizedLandmark[] {
-  if (poses.length === 1) return poses[0];
+/** Pick the pose whose hip center-X is closest to 0.5. Returns [index, landmarks]. */
+function pickCenterPose(poses: NormalizedLandmark[][]): [number, NormalizedLandmark[]] {
+  if (poses.length === 1) return [0, poses[0]];
 
   let bestIdx = 0;
   let bestDist = Infinity;
@@ -68,7 +79,7 @@ function pickCenterPose(poses: NormalizedLandmark[][]): NormalizedLandmark[] {
       bestIdx = i;
     }
   }
-  return poses[bestIdx];
+  return [bestIdx, poses[bestIdx]];
 }
 
 export function usePoseLandmarker() {
@@ -113,6 +124,7 @@ export function usePoseLandmarker() {
       minPoseDetectionConfidence: 0.5,
       minPosePresenceConfidence: 0.5,
       minTrackingConfidence: 0.5,
+      outputSegmentationMasks: true,
     });
 
     landmarkerRef.current = landmarker;
@@ -132,7 +144,19 @@ export function usePoseLandmarker() {
         const result = landmarker.detectForVideo(video, timestampMs);
         if (!result.landmarks || result.landmarks.length === 0) return null;
 
-        const landmarks = pickCenterPose(result.landmarks);
+        const [poseIdx, landmarks] = pickCenterPose(result.landmarks);
+
+        // Extract segmentation mask for the selected pose
+        let segmentationMask: Float32Array | null = null;
+        let maskWidth = 0;
+        let maskHeight = 0;
+        if (result.segmentationMasks && result.segmentationMasks.length > poseIdx) {
+          const mask = result.segmentationMasks[poseIdx];
+          maskWidth = mask.width;
+          maskHeight = mask.height;
+          // Copy the data since MPMask is recycled by MediaPipe
+          segmentationMask = new Float32Array(mask.getAsFloat32Array());
+        }
 
         const leftHip = landmarks[LEFT_HIP];
         const rightHip = landmarks[RIGHT_HIP];
@@ -141,9 +165,9 @@ export function usePoseLandmarker() {
         const leftAnkle = landmarks[LEFT_ANKLE];
         const rightAnkle = landmarks[RIGHT_ANKLE];
 
-        // Check full body visibility (raw per-frame)
+        // Check body visibility: confidence AND in-frame position
         const rawBodyVisible = FULL_BODY_INDICES.every(
-          (idx) => (landmarks[idx].visibility ?? 0) >= VISIBILITY_THRESHOLD,
+          (idx) => isLandmarkVisible(landmarks[idx]),
         );
 
         // Stabilize full-body visibility to prevent flickering
@@ -222,6 +246,9 @@ export function usePoseLandmarker() {
           landmarks,
           counted,
           fullBodyVisible,
+          segmentationMask,
+          maskWidth,
+          maskHeight,
         };
       } catch {
         return null;

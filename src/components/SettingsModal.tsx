@@ -16,11 +16,13 @@ interface SettingsModalProps {
 export function SettingsModal({ open, onClose, exerciseMode, onExerciseModeChange }: SettingsModalProps) {
   const [url, setUrl] = useState('');
   const [saved, setSaved] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     if (open) {
       setUrl(getWebhookUrl());
       setSaved(false);
+      setShowGuide(false);
     }
   }, [open]);
 
@@ -41,7 +43,7 @@ export function SettingsModal({ open, onClose, exerciseMode, onExerciseModeChang
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md mx-4 bg-dark-surface border border-dark-border rounded-2xl p-6 shadow-2xl"
+        className="w-full max-w-md mx-4 bg-dark-surface border border-dark-border rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -76,9 +78,13 @@ export function SettingsModal({ open, onClose, exerciseMode, onExerciseModeChang
           </button>
         </div>
 
-        <p className="text-xs text-gray-400 mb-5">
-          Discord Webhookを設定すると、居眠り検知・エクササイズ完了時にスクリーンショットが自動送信されます。
-        </p>
+        {/* Discord Webhook section */}
+        <div className="border-t border-dark-border pt-4 mb-4">
+          <h3 className="text-sm font-bold text-white mb-1">Discord通知</h3>
+          <p className="text-xs text-gray-400 mb-3 leading-relaxed">
+            Webhook URLを設定すると、居眠り検知時やエクササイズ完了時に、スクリーンショット付きの通知がDiscordチャンネルに自動送信されます。
+          </p>
+        </div>
 
         {/* URL input */}
         <label className="block text-sm text-gray-300 mb-1.5">
@@ -102,6 +108,52 @@ export function SettingsModal({ open, onClose, exerciseMode, onExerciseModeChang
           <p className="text-xs text-neon-red mt-1">
             有効なDiscord Webhook URLを入力してください
           </p>
+        )}
+
+        {/* Guide toggle */}
+        <button
+          onClick={() => setShowGuide(!showGuide)}
+          className="mt-3 text-xs text-neon-blue hover:text-neon-blue/80 transition-colors flex items-center gap-1"
+        >
+          <svg className={`w-3 h-3 transition-transform ${showGuide ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+          Webhook URLの取得方法
+        </button>
+
+        {/* Guide content */}
+        {showGuide && (
+          <div className="mt-3 p-3 bg-dark-bg rounded-lg border border-dark-border text-xs text-gray-300 leading-relaxed space-y-3">
+            <div>
+              <p className="font-bold text-white mb-1">1. サーバー設定を開く</p>
+              <p className="text-gray-400">
+                通知を送りたいDiscordサーバーの名前をクリック →「サーバー設定」を開きます。
+              </p>
+            </div>
+            <div>
+              <p className="font-bold text-white mb-1">2. 連携サービス → Webhook</p>
+              <p className="text-gray-400">
+                左メニューの「連携サービス」→「Webhook」を選択し、「新しいウェブフック」をクリックします。
+              </p>
+            </div>
+            <div>
+              <p className="font-bold text-white mb-1">3. チャンネルを選択</p>
+              <p className="text-gray-400">
+                作成されたWebhookをクリックして展開し、通知を送信したいチャンネルをプルダウンから選択します。名前は自由に変更できます。
+              </p>
+            </div>
+            <div>
+              <p className="font-bold text-white mb-1">4. URLをコピー</p>
+              <p className="text-gray-400">
+                「ウェブフックURLをコピー」ボタンを押して、上の入力欄に貼り付けてください。
+              </p>
+            </div>
+            <div className="pt-2 border-t border-dark-border">
+              <p className="text-gray-500">
+                URLは <span className="text-gray-300 font-mono">https://discord.com/api/webhooks/...</span> の形式です。このURLは他人に共有しないでください。
+              </p>
+            </div>
+          </div>
         )}
 
         {/* Actions */}

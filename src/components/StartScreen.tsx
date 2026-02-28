@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ExerciseMode } from '../types';
-import { EyeIcon, PlayIcon, CameraIcon, VolumeIcon, CpuIcon, SettingsIcon, ChartIcon } from './Icons';
+import { EyeIcon, PlayIcon, SettingsIcon, ChartIcon, GitHubIcon } from './Icons';
 import { SettingsModal } from './SettingsModal';
 
 interface StartScreenProps {
@@ -25,19 +25,21 @@ export function StartScreen({ onStart, loading, onDashboard, exerciseMode, onExe
       {/* Dashboard button — top-left */}
       <button
         onClick={onDashboard}
-        className="absolute top-4 left-4 z-20 p-2 rounded-lg bg-dark-surface/80 border border-dark-border text-gray-400 hover:text-white transition-colors"
+        className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-dark-surface border border-gray-600 text-gray-200 hover:border-neon-blue hover:text-white transition-colors"
         aria-label="ダッシュボード"
       >
-        <ChartIcon className="w-5 h-5" />
+        <ChartIcon className="w-4 h-4" />
+        <span className="text-xs font-bold">ダッシュボード</span>
       </button>
 
       {/* Settings button — top-right */}
       <button
         onClick={() => setSettingsOpen(true)}
-        className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-dark-surface/80 border border-dark-border text-gray-400 hover:text-white transition-colors"
+        className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-dark-surface border border-gray-600 text-gray-200 hover:border-neon-blue hover:text-white transition-colors"
         aria-label="設定"
       >
-        <SettingsIcon className="w-5 h-5" />
+        <SettingsIcon className="w-4 h-4" />
+        <span className="text-xs font-bold">設定</span>
       </button>
 
       {/* Content */}
@@ -45,8 +47,8 @@ export function StartScreen({ onStart, loading, onDashboard, exerciseMode, onExe
         {/* Logo / Title */}
         <div className="animate-float text-center">
           <EyeIcon className="w-16 h-16 mx-auto mb-4 text-neon-blue" />
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-neon-blue to-neon-purple bg-clip-text text-transparent">
-            NEMUNAI
+          <h1 className="text-4xl font-bold text-white">
+            NEMUKE BUSTER
           </h1>
           <p className="text-gray-400 mt-2 text-sm tracking-widest uppercase">
             居眠り検知システム
@@ -91,22 +93,18 @@ export function StartScreen({ onStart, loading, onDashboard, exerciseMode, onExe
           </div>
         </button>
 
-        {/* Info badges */}
-        <div className="flex gap-3 mt-4">
-          <span className="px-3 py-1.5 text-xs bg-dark-surface border border-dark-border rounded-full text-gray-400 flex items-center gap-1.5">
-            <CameraIcon className="w-3.5 h-3.5" />
-            カメラ
-          </span>
-          <span className="px-3 py-1.5 text-xs bg-dark-surface border border-dark-border rounded-full text-gray-400 flex items-center gap-1.5">
-            <VolumeIcon className="w-3.5 h-3.5" />
-            音声
-          </span>
-          <span className="px-3 py-1.5 text-xs bg-dark-surface border border-dark-border rounded-full text-gray-400 flex items-center gap-1.5">
-            <CpuIcon className="w-3.5 h-3.5" />
-            AI検知
-          </span>
-        </div>
       </div>
+
+      {/* GitHub link — bottom */}
+      <a
+        href="https://github.com/Raptor-zip/KOSENJIN-Hackathon-2026"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-dark-surface/80 border border-dark-border text-gray-400 hover:text-white transition-colors text-xs pointer-events-auto"
+      >
+        <GitHubIcon className="w-4 h-4" />
+        GitHub
+      </a>
 
       {/* Settings modal */}
       <SettingsModal

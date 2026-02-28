@@ -11,7 +11,9 @@ interface PenaltyScreenProps {
   fullBodyVisible: boolean;
   exerciseMode: ExerciseMode;
   isTilted: boolean;
+  tiltAngle: number;
   upperBodyVisible: boolean;
+  penaltyComplete: boolean;
 }
 
 export function PenaltyScreen({
@@ -21,46 +23,112 @@ export function PenaltyScreen({
   fullBodyVisible,
   exerciseMode,
   isTilted,
+  tiltAngle,
   upperBodyVisible,
+  penaltyComplete,
 }: PenaltyScreenProps) {
+  const remaining = requiredSquats - squatCount;
   const progress = squatCount / requiredSquats;
-  const [popCount, setPopCount] = useState<number | null>(null);
+  const [popRemaining, setPopRemaining] = useState<number | null>(null);
   const prevCount = useRef(squatCount);
 
   useEffect(() => {
     if (squatCount > 0 && squatCount !== prevCount.current) {
       prevCount.current = squatCount;
-      setPopCount(squatCount);
-      const timer = setTimeout(() => setPopCount(null), 1800);
+      const rem = requiredSquats - squatCount;
+      setPopRemaining(rem);
+      const timer = setTimeout(() => setPopRemaining(null), 1800);
       return () => clearTimeout(timer);
     }
-  }, [squatCount]);
+  }, [squatCount, requiredSquats]);
+
+  // --- Completion overlay ---
+  if (penaltyComplete) {
+    return (
+      <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="relative z-10 flex flex-col items-center animate-count-pop">
+          <span
+            className="text-[120px] leading-none font-black text-white"
+            style={{
+              WebkitTextStroke: '6px #39ff14',
+              paintOrder: 'stroke fill',
+              textShadow: '6px 6px 0 #000, -6px 6px 0 #000, 6px -6px 0 #000, -6px -6px 0 #000',
+            }}
+          >
+            CLEAR!
+          </span>
+          <span
+            className="text-3xl font-black text-neon-green tracking-[0.2em] mt-4"
+            style={{ textShadow: STROKE_SHADOW }}
+          >
+            {exerciseMode === 'fullbody' ? 'スクワット' : '首ストレッチ'} {requiredSquats}回 完了!
+          </span>
+          <span
+            className="text-lg font-bold text-gray-300 mt-3"
+            style={{ textShadow: STROKE_SHADOW }}
+          >
+            監視モードに戻ります...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col pointer-events-none">
       {/* Thin red border flash */}
       <div className="absolute inset-0 border-4 border-neon-red/80 animate-flash-red z-30 rounded-sm" />
 
-      {/* Center pop number */}
-      {popCount !== null && (
-        <div className="absolute inset-0 flex items-center justify-center z-40" key={popCount}>
+      {/* Center pop — remaining count */}
+      {popRemaining !== null && (
+        <div className="absolute inset-0 flex items-center justify-center z-40" key={squatCount}>
           <div className="animate-count-pop flex flex-col items-center">
-            <span
-              className="text-[200px] leading-none font-black text-white"
-              style={{
-                WebkitTextStroke: '8px #39ff14',
-                paintOrder: 'stroke fill',
-                textShadow: '6px 6px 0 #000, -6px 6px 0 #000, 6px -6px 0 #000, -6px -6px 0 #000',
-              }}
-            >
-              {popCount}
-            </span>
-            <span
-              className="text-4xl font-black text-neon-green tracking-[0.3em] mt-2"
-              style={{ textShadow: STROKE_SHADOW }}
-            >
-              NICE!
-            </span>
+            {popRemaining > 0 ? (
+              <span className="flex items-baseline gap-2">
+                <span
+                  className="text-5xl font-black text-gray-200"
+                  style={{ textShadow: STROKE_SHADOW }}
+                >
+                  残り
+                </span>
+                <span
+                  className="text-[160px] leading-none font-black text-white"
+                  style={{
+                    WebkitTextStroke: '8px #39ff14',
+                    paintOrder: 'stroke fill',
+                    textShadow: '6px 6px 0 #000, -6px 6px 0 #000, 6px -6px 0 #000, -6px -6px 0 #000',
+                  }}
+                >
+                  {popRemaining}
+                </span>
+                <span
+                  className="text-5xl font-black text-gray-200"
+                  style={{ textShadow: STROKE_SHADOW }}
+                >
+                  回
+                </span>
+              </span>
+            ) : (
+              <>
+                <span
+                  className="text-[160px] leading-none font-black text-white"
+                  style={{
+                    WebkitTextStroke: '8px #39ff14',
+                    paintOrder: 'stroke fill',
+                    textShadow: '6px 6px 0 #000, -6px 6px 0 #000, 6px -6px 0 #000, -6px -6px 0 #000',
+                  }}
+                >
+                  0
+                </span>
+                <span
+                  className="text-5xl font-black text-neon-green tracking-wider mt-2"
+                  style={{ textShadow: STROKE_SHADOW }}
+                >
+                  CLEAR!
+                </span>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -74,7 +142,7 @@ export function PenaltyScreen({
               className="text-3xl font-black text-yellow-400"
               style={{ textShadow: STROKE_SHADOW }}
             >
-              {exerciseMode === 'fullbody' ? '全身を映してください' : '顔と肩を映してください'}
+              {exerciseMode === 'fullbody' ? 'お腹から足まで映してください' : '顔を映してください'}
             </p>
             <p
               className="text-lg text-gray-200 mt-2 font-bold"
@@ -82,13 +150,13 @@ export function PenaltyScreen({
             >
               {exerciseMode === 'fullbody' ? (
                 <>
-                  頭からつま先まで画面に入るように
+                  お腹から足元まで画面に入るように
                   <br />
-                  カメラから離れてください
+                  カメラの位置を調整してください
                 </>
               ) : (
                 <>
-                  顔と肩が画面に入るように
+                  顔が画面に入るように
                   <br />
                   カメラの位置を調整してください
                 </>
@@ -106,7 +174,7 @@ export function PenaltyScreen({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xl font-black text-neon-red leading-tight">
-              {exerciseMode === 'fullbody' ? 'スクワット' : '首ストレッチ'} {squatCount}/{requiredSquats}
+              {exerciseMode === 'fullbody' ? 'スクワット' : '首ストレッチ'} 残り{remaining}回
             </p>
             <p className="text-base text-gray-200 mt-1 font-medium">
               {exerciseMode === 'fullbody'
@@ -130,11 +198,31 @@ export function PenaltyScreen({
               />
             </svg>
             <span className="absolute inset-0 flex items-center justify-center text-2xl font-black text-white">
-              {squatCount}
+              {remaining}
             </span>
           </div>
         </div>
       </div>
+
+      {/* Tilt angle display */}
+      {exerciseMode === 'upperbody' && upperBodyVisible && (
+        <div className="relative z-20 mx-3 mt-2 flex justify-center">
+          <div className="bg-black/70 backdrop-blur-sm rounded-xl px-4 py-2 flex items-center gap-3">
+            <span className="text-sm font-bold text-gray-400">角度</span>
+            <span
+              className={`text-3xl font-black tabular-nums ${
+                Math.abs(tiltAngle) > 12 ? 'text-neon-green' : 'text-white'
+              }`}
+              style={{ textShadow: STROKE_SHADOW, minWidth: '5ch', textAlign: 'right' }}
+            >
+              {tiltAngle >= 0 ? '+' : ''}{tiltAngle.toFixed(1)}°
+            </span>
+            <span className="text-sm font-bold text-gray-400">
+              {Math.abs(tiltAngle) > 12 ? (tiltAngle > 0 ? '← 左傾き' : '→ 右傾き') : '正面'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Bottom instruction guide */}
       <div className="relative z-20 mt-auto mx-3 mb-4">

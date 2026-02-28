@@ -42,6 +42,9 @@ export interface SquatResult {
   kneeAngle: number;
   landmarks: NormalizedLandmark[];
   fullBodyVisible: boolean;
+  segmentationMask: Float32Array | null;
+  maskWidth: number;
+  maskHeight: number;
 }
 
 export type ExerciseMode = 'fullbody' | 'upperbody';
