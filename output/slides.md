@@ -21,9 +21,9 @@ style: |
 
 <!-- _class: dark -->
 
-# NEMUNAI
+# NEMUKE BUSTER
 
-〜寝ない〜
+〜眠気バスター〜
 
 **眠気を検知し、運動で覚醒させる。ブラウザだけで。**
 
@@ -48,7 +48,7 @@ Sources: OECD 2021, NSC, Sleep Foundation, Japan Ministry of Health
 
 ## SOLUTION
 
-# NEMUNAIは「検知」で終わらない。「覚醒」まで完結する。
+# NEMUKE BUSTERは「検知」で終わらない。「覚醒」まで完結する。
 
 ### 3ステップの覚醒サイクル
 
@@ -98,15 +98,15 @@ Sources: OECD 2021, NSC, Sleep Foundation, Japan Ministry of Health
 |:---:|:---:|:---:|
 | 居眠り検知市場全体（2034） | ソフトウェアDMS + 生産性ツール | 日本の学生・リモートワーカー・運送業 |
 
-> **既存プレイヤーは全てハードウェア依存（$500〜$5,000/台）。NEMUNAIは限界費用ほぼゼロ。**
+> **既存プレイヤーは全てハードウェア依存（$500〜$5,000/台）。NEMUKE BUSTERは限界費用ほぼゼロ。**
 
 ---
 
 ## ADVANTAGE
 
-# なぜNEMUNAIが勝てるのか
+# なぜNEMUKE BUSTERが勝てるのか
 
-|  | 車載DMS | 専用デバイス | アラームアプリ | **NEMUNAI** |
+|  | 車載DMS | 専用デバイス | アラームアプリ | **NEMUKE BUSTER** |
 |---|---|---|---|---|
 | コスト | $500〜5,000 | $200〜500 | 無料 | **無料/Freemium** |
 | インストール | 車両組込 | デバイス購入 | アプリDL | **URLを開くだけ** |
@@ -138,7 +138,7 @@ Sources: OECD 2021, NSC, Sleep Foundation, Japan Ministry of Health
 |:---:|:---:|:---:|
 | **無料版でユーザー獲得** | **プレミアム機能** | **B2B展開** |
 | 居眠り検知 + スクワット解除 | 覚醒データ分析ダッシュボード | 運送会社向けドライバー管理 |
-| 「NEMUNAIされた」SNS拡散 | カスタムエクササイズ・PWA | 企業向け生産性ツール |
+| 「NEMUKE BUSTERされた」SNS拡散 | カスタムエクササイズ・PWA | 企業向け生産性ツール |
 
 > **サーバーコストゼロ → フリーミアムでも十分に成立するユニットエコノミクス**
 
@@ -146,7 +146,7 @@ Sources: OECD 2021, NSC, Sleep Foundation, Japan Ministry of Health
 
 <!-- _class: dark -->
 
-# NEMUNAI
+# NEMUKE BUSTER
 
 **$27B市場に、ゼロコストのソフトウェアで挑む。**
 

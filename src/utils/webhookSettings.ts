@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'nemunai_discord_webhook_url';
+const STORAGE_KEY = 'nemuke_buster_discord_webhook_url';
 
 const WEBHOOK_URL_RE =
   /^https:\/\/discord\.com\/api\/webhooks\/\d+\/[\w-]+$/;

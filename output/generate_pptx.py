@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate NEMUNAI VC-pitch PPTX (11 slides) — with user validation + Discord growth."""
+"""Generate NEMUKE BUSTER VC-pitch PPTX (11 slides) — with user validation + Discord growth."""
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -164,9 +164,9 @@ def build():
     accent_bar(s)
 
     tb(s, Inches(1.2), Inches(1.5), Inches(11), Inches(1.2),
-       "NEMUNAI", sz=64, color=WHITE, bold=True, align=PP_ALIGN.CENTER)
+       "NEMUKE BUSTER", sz=64, color=WHITE, bold=True, align=PP_ALIGN.CENTER)
     tb(s, Inches(1.2), Inches(2.8), Inches(11), Inches(0.6),
-       "\u301c\u5bdd\u306a\u3044\u301c", sz=32, color=ACCENT_BLUE, align=PP_ALIGN.CENTER)
+       "\u301c\u7720\u6c17\u30d0\u30b9\u30bf\u30fc\u301c", sz=32, color=ACCENT_BLUE, align=PP_ALIGN.CENTER)
 
     rect(s, Inches(3.5), Inches(3.8), Inches(6.3), Pt(1), ACCENT_BLUE)
     tb(s, Inches(1.2), Inches(4.0), Inches(11), Inches(0.6),
@@ -224,7 +224,7 @@ def build():
     s = prs.slides.add_slide(blank)
     set_bg(s, WHITE)
     section_label(s, "SOLUTION")
-    heading(s, 'NEMUNAI\u306f\u300c\u691c\u77e5\u300d\u3067\u7d42\u308f\u3089\u306a\u3044\u3002\u300c\u899a\u9192\u300d\u307e\u3067\u5b8c\u7d50\u3059\u308b\u3002')
+    heading(s, 'NEMUKE BUSTER\u306f\u300c\u691c\u77e5\u300d\u3067\u7d42\u308f\u3089\u306a\u3044\u3002\u300c\u899a\u9192\u300d\u307e\u3067\u5b8c\u7d50\u3059\u308b\u3002')
 
     flow = [
         ("1", "\u691c\u77e5", "\u30ab\u30e1\u30e9\u3067EAR\n(Eye Aspect Ratio)\n\u3092\u30ea\u30a2\u30eb\u30bf\u30a4\u30e0\u8a08\u6e2c", ACCENT_BLUE),
@@ -403,7 +403,7 @@ def build():
 
     rrect(s, Inches(0.8), Inches(5.3), Inches(11.5), Inches(0.9), RED_BG, EMPHASIS_RED)
     tb(s, Inches(1.2), Inches(5.4), Inches(10.8), Inches(0.7),
-       "\u65e2\u5b58\u30d7\u30ec\u30a4\u30e4\u30fc\u306f\u5168\u3066\u30cf\u30fc\u30c9\u30a6\u30a7\u30a2\u4f9d\u5b58\uff08$500\u301c$5,000/\u53f0\uff09\u3002NEMUNAI\u306f\u9650\u754c\u8cbb\u7528\u307b\u307c\u30bc\u30ed\u3002",
+       "\u65e2\u5b58\u30d7\u30ec\u30a4\u30e4\u30fc\u306f\u5168\u3066\u30cf\u30fc\u30c9\u30a6\u30a7\u30a2\u4f9d\u5b58\uff08$500\u301c$5,000/\u53f0\uff09\u3002NEMUKE BUSTER\u306f\u9650\u754c\u8cbb\u7528\u307b\u307c\u30bc\u30ed\u3002",
        sz=20, color=EMPHASIS_RED, bold=True, align=PP_ALIGN.CENTER)
 
     tb(s, Inches(0.8), Inches(6.4), Inches(11), Inches(0.3),
@@ -417,9 +417,9 @@ def build():
     s = prs.slides.add_slide(blank)
     set_bg(s, WHITE)
     section_label(s, "ADVANTAGE")
-    heading(s, "\u306a\u305cNEMUNAI\u304c\u52dd\u3066\u308b\u306e\u304b")
+    heading(s, "\u306a\u305cNEMUKE BUSTER\u304c\u52dd\u3066\u308b\u306e\u304b")
 
-    headers = ["", "\u8eca\u8f09DMS", "\u5c02\u7528\u30c7\u30d0\u30a4\u30b9", "\u30a2\u30e9\u30fc\u30e0\u30a2\u30d7\u30ea", "NEMUNAI"]
+    headers = ["", "\u8eca\u8f09DMS", "\u5c02\u7528\u30c7\u30d0\u30a4\u30b9", "\u30a2\u30e9\u30fc\u30e0\u30a2\u30d7\u30ea", "NEMUKE BUSTER"]
     rows = [
         headers,
         ["\u30b3\u30b9\u30c8", "$500\u301c5,000", "$200\u301c500", "\u7121\u6599", "\u7121\u6599 / Freemium"],
@@ -512,7 +512,7 @@ def build():
         ("Phase 1", "Now", "\u7121\u6599\u3067\u30d0\u30a4\u30e9\u30eb\u7372\u5f97",
          ["\u57fa\u672c\u6a5f\u80fd\u3092\u7121\u6599\u63d0\u4f9b",
           "Discord\u6652\u3089\u3057 \u2192 \u53cb\u4eba\u304c\u8a66\u3059",
-          "\u300cNEMUNAI\u3055\u308c\u305f\u300d\u304cSNS\u3067\u62e1\u6563"],
+          "\u300cNEMUKE BUSTER\u3055\u308c\u305f\u300d\u304cSNS\u3067\u62e1\u6563"],
          ACCENT_BLUE, BLUE_BG),
         ("Phase 2", "6\u30f6\u6708\u5f8c", "\u30d7\u30ec\u30df\u30a2\u30e0\u5316",
          ["\u899a\u9192\u30c7\u30fc\u30bf\u5206\u6790\u30c0\u30c3\u30b7\u30e5\u30dc\u30fc\u30c9",
@@ -566,7 +566,7 @@ def build():
     accent_bar(s)
 
     tb(s, Inches(1.2), Inches(1.0), Inches(11), Inches(1.0),
-       "NEMUNAI", sz=64, color=WHITE, bold=True, align=PP_ALIGN.CENTER)
+       "NEMUKE BUSTER", sz=64, color=WHITE, bold=True, align=PP_ALIGN.CENTER)
 
     rect(s, Inches(5.0), Inches(2.2), Inches(3.3), Pt(2), ACCENT_BLUE)
 

@@ -1,6 +1,6 @@
 # Discord Webhook 連携ガイド
 
-NEMUNAI は居眠り検知・スクワット完了時に、カメラのスクリーンショット付きで Discord に自動通知を送れます。
+NEMUKE BUSTER は居眠り検知・スクワット完了時に、カメラのスクリーンショット付きで Discord に自動通知を送れます。
 サーバー不要 — ブラウザから直接 Discord Webhook へ送信します。
 
 ## 1. Discord Webhook の作成手順
@@ -14,7 +14,7 @@ NEMUNAI は居眠り検知・スクワット完了時に、カメラのスクリ
 
 1. 左メニューから **連携サービス** → **ウェブフック** を選択
 2. **「新しいウェブフック」** をクリック
-3. 名前を任意で変更 (例: `NEMUNAI Bot`)
+3. 名前を任意で変更 (例: `NEMUKE BUSTER Bot`)
 4. アイコンも好みで設定可能
 
 ### 1-3. URL をコピー
@@ -28,9 +28,9 @@ https://discord.com/api/webhooks/1234567890/abcDEFghiJKLmnoPQRstuvWXyz...
 
 > **注意:** この URL を知っている人は誰でもメッセージを送信できます。第三者に共有しないでください。
 
-## 2. NEMUNAI での設定
+## 2. NEMUKE BUSTER での設定
 
-1. NEMUNAI のスタート画面を開く
+1. NEMUKE BUSTER のスタート画面を開く
 2. **右上の ⚙ (歯車アイコン)** をクリック
 3. 設定モーダルが開くので、**Webhook URL** 欄に先ほどコピーした URL を貼り付ける
 4. **「保存」** をクリック

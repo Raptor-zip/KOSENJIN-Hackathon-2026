@@ -1,6 +1,6 @@
 import type { ExerciseMode } from '../types';
 
-const STORAGE_KEY = 'nemunai_exercise_mode';
+const STORAGE_KEY = 'nemuke_buster_exercise_mode';
 
 export function getExerciseMode(): ExerciseMode {
   const stored = localStorage.getItem(STORAGE_KEY);

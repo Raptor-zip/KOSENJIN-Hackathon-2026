@@ -1,6 +1,6 @@
 import type { Session, DailySummary } from '../types';
 
-const DB_NAME = 'nemunai_db';
+const DB_NAME = 'nemuke_buster_db';
 const DB_VERSION = 1;
 const SESSIONS_STORE = 'sessions';
 const DAILY_STORE = 'daily_summaries';
