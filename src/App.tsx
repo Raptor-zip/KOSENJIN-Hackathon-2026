@@ -74,35 +74,35 @@ function App() {
       const du = getDrawingUtils();
       if (!du) return;
 
-      // Tesselation (mesh) — subtle
+      // Tesselation grid — white wireframe like the MediaPipe demo
       du.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_TESSELATION, {
-        color: 'rgba(0, 212, 255, 0.15)',
+        color: 'rgba(255, 255, 255, 0.18)',
         lineWidth: 0.5,
       });
 
-      // Face contours — more visible
+      // Face contours — slightly brighter white on top of the grid
       du.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_CONTOURS, {
-        color: 'rgba(0, 212, 255, 0.6)',
+        color: 'rgba(255, 255, 255, 0.5)',
         lineWidth: 1,
       });
 
-      // Eyes — highlighted
+      // Eyes — bright green to stand out
       du.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, {
-        color: '#39ff14',
+        color: 'rgba(57, 255, 20, 0.8)',
         lineWidth: 2,
       });
       du.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, {
-        color: '#39ff14',
+        color: 'rgba(57, 255, 20, 0.8)',
         lineWidth: 2,
       });
 
-      // Irises
+      // Irises — purple accent
       du.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS, {
-        color: '#a855f7',
+        color: 'rgba(168, 85, 247, 0.9)',
         lineWidth: 2,
       });
       du.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS, {
-        color: '#a855f7',
+        color: 'rgba(168, 85, 247, 0.9)',
         lineWidth: 2,
       });
     },
@@ -323,7 +323,6 @@ function App() {
           squatCount={squatCount}
           requiredSquats={REQUIRED_SQUATS}
           isSquatting={isSquatting}
-          kneeAngle={kneeAngle}
         />
       )}
     </div>

@@ -21,8 +21,8 @@ html, body, #root {
 }
 
 @keyframes flash-red {
-  0%, 100% { background-color: rgba(255, 0, 0, 0.0); }
-  50% { background-color: rgba(255, 0, 0, 0.5); }
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
 }
 
 @keyframes pulse-glow {
