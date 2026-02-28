@@ -25,6 +25,7 @@ const EMPTY_SUMMARY = (date: string): DailySummary => ({
   totalWorkMs: 0,
   totalDrowsy: 0,
   totalSquats: 0,
+  totalStretches: 0,
   sessions: [],
 });
 

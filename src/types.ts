@@ -7,6 +7,14 @@ export interface DrowsinessEvent {
   durationMs: number;
 }
 
+export interface ExerciseEvent {
+  timestamp: number;
+  count: number;
+  durationMs: number;
+  mode: ExerciseMode;
+}
+
+/** @deprecated Use exerciseEvents instead. Kept for DB migration. */
 export interface SquatEvent {
   timestamp: number;
   count: number;
@@ -18,7 +26,8 @@ export interface Session {
   startedAt: number;
   endedAt: number | null;
   drowsinessEvents: DrowsinessEvent[];
-  squatEvents: SquatEvent[];
+  squatEvents: SquatEvent[];         // legacy — kept for old data
+  exerciseEvents: ExerciseEvent[];
 }
 
 export interface DailySummary {
@@ -26,6 +35,7 @@ export interface DailySummary {
   totalWorkMs: number;
   totalDrowsy: number;
   totalSquats: number;
+  totalStretches: number;
   sessions: string[];
 }
 

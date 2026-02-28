@@ -58,7 +58,7 @@ function App() {
   const poseLandmarker = usePoseLandmarker();
   const headTiltDetector = useHeadTiltDetector();
 
-  const { startSession, logDrowsiness, logSquatCompletion, endSession } = useSessionLogger();
+  const { startSession, logDrowsiness, logExerciseCompletion, endSession } = useSessionLogger();
 
   const animFrameRef = useRef(0);
   const drowsyStartRef = useRef<number | null>(null);
@@ -394,7 +394,7 @@ function App() {
       sendWithToast('居眠りを検知しました！');
     }
     if (prev === 'penalty' && appState === 'monitoring') {
-      logSquatCompletion(REQUIRED_SQUATS);
+      logExerciseCompletion(REQUIRED_SQUATS, exerciseMode);
       sendWithToast(exerciseMode === 'fullbody' ? 'スクワット5回完了！' : '首ストレッチ5回完了！');
     }
     if (prev === 'monitoring' && appState === 'start') {

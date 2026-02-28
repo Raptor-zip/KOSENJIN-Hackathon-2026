@@ -36,6 +36,7 @@ export interface DailyReport {
   totalWorkMs: number;
   totalDrowsy: number;
   totalSquats: number;
+  totalStretches: number;
 }
 
 function formatMsForReport(ms: number): string {
@@ -68,8 +69,13 @@ export async function sendDailyReport(report: DailyReport): Promise<boolean> {
         inline: true,
       },
       {
-        name: 'エクササイズ',
+        name: 'スクワット',
         value: `${report.totalSquats}回`,
+        inline: true,
+      },
+      {
+        name: '首ストレッチ',
+        value: `${report.totalStretches}回`,
         inline: true,
       },
     ],

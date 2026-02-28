@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
-import type { Session, DailySummary } from '../types';
+import type { Session, DailySummary, ExerciseMode } from '../types';
 import {
   saveSession,
   getSession,
@@ -16,15 +16,34 @@ function dateKey(ms: number): string {
   return `${y}-${m}-${day}`;
 }
 
+function countExercises(session: Session): { squats: number; stretches: number } {
+  // Count from new exerciseEvents field
+  const events = session.exerciseEvents ?? [];
+  let squats = events
+    .filter((e) => e.mode === 'fullbody')
+    .reduce((sum, e) => sum + e.count, 0);
+  let stretches = events
+    .filter((e) => e.mode === 'upperbody')
+    .reduce((sum, e) => sum + e.count, 0);
+
+  // Also count legacy squatEvents that have no corresponding exerciseEvent
+  const legacySquats = (session.squatEvents ?? []).reduce((sum, e) => sum + e.count, 0);
+  if (events.length === 0 && legacySquats > 0) {
+    squats += legacySquats;
+  }
+
+  return { squats, stretches };
+}
+
 async function updateDailySummary(session: Session): Promise<void> {
   const date = dateKey(session.startedAt);
   const existing = await getDailySummary(date);
 
   const endTime = session.endedAt ?? Date.now();
   const workMs = endTime - session.startedAt;
+  const { squats, stretches } = countExercises(session);
 
   if (existing) {
-    // Update if session already tracked, otherwise add
     const hasSession = existing.sessions.includes(session.id);
     const summary: DailySummary = {
       date,
@@ -36,21 +55,20 @@ async function updateDailySummary(session: Session): Promise<void> {
         : existing.totalDrowsy + session.drowsinessEvents.length,
       totalSquats: hasSession
         ? existing.totalSquats
-        : existing.totalSquats +
-          session.squatEvents.reduce((sum, e) => sum + e.count, 0),
+        : existing.totalSquats + squats,
+      totalStretches: hasSession
+        ? (existing.totalStretches ?? 0)
+        : (existing.totalStretches ?? 0) + stretches,
       sessions: hasSession
         ? existing.sessions
         : [...existing.sessions, session.id],
     };
 
-    // If session was already tracked, recalculate from scratch
     if (hasSession) {
-      // We just re-save — the values are already correct from initial add
-      // But we should update the work time for the current session
-      // Recalculate: remove old contribution and add new
-      summary.totalWorkMs = existing.totalWorkMs; // keep as-is for finalized sessions
+      summary.totalWorkMs = existing.totalWorkMs;
       summary.totalDrowsy = existing.totalDrowsy;
       summary.totalSquats = existing.totalSquats;
+      summary.totalStretches = existing.totalStretches ?? 0;
     }
 
     await saveDailySummary(summary);
@@ -59,7 +77,8 @@ async function updateDailySummary(session: Session): Promise<void> {
       date,
       totalWorkMs: workMs,
       totalDrowsy: session.drowsinessEvents.length,
-      totalSquats: session.squatEvents.reduce((sum, e) => sum + e.count, 0),
+      totalSquats: squats,
+      totalStretches: stretches,
       sessions: [session.id],
     });
   }
@@ -101,6 +120,7 @@ export function useSessionLogger() {
         endedAt: null,
         drowsinessEvents: [],
         squatEvents: [],
+        exerciseEvents: [],
       };
       await saveSession(session);
       sessionIdRef.current = id;
@@ -126,20 +146,22 @@ export function useSessionLogger() {
     }
   }, []);
 
-  const logSquatCompletion = useCallback(async (count: number) => {
+  const logExerciseCompletion = useCallback(async (count: number, mode: ExerciseMode) => {
     const id = sessionIdRef.current;
     if (!id) return;
     try {
       const session = await getSession(id);
       if (!session) return;
       const now = Date.now();
-      session.squatEvents.push({
-        timestamp: now,
-        count,
-        durationMs: penaltyStartRef.current
-          ? now - penaltyStartRef.current
-          : 0,
-      });
+      const durationMs = penaltyStartRef.current
+        ? now - penaltyStartRef.current
+        : 0;
+
+      // Write to both legacy and new fields for compatibility
+      session.squatEvents.push({ timestamp: now, count, durationMs });
+      if (!session.exerciseEvents) session.exerciseEvents = [];
+      session.exerciseEvents.push({ timestamp: now, count, durationMs, mode });
+
       await saveSession(session);
       penaltyStartRef.current = 0;
     } catch {
@@ -162,5 +184,5 @@ export function useSessionLogger() {
     }
   }, []);
 
-  return { startSession, logDrowsiness, logSquatCompletion, endSession };
+  return { startSession, logDrowsiness, logExerciseCompletion, endSession };
 }

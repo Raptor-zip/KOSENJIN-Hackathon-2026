@@ -55,9 +55,27 @@ export function SessionTimeline({ sessions, date }: SessionTimelineProps) {
               }),
             )}
 
-            {/* Squat markers */}
-            {sessions.flatMap((s) =>
-              s.squatEvents.map((e, i) => {
+            {/* Exercise markers */}
+            {sessions.flatMap((s) => {
+              const events = s.exerciseEvents ?? [];
+              if (events.length > 0) {
+                return events.map((e, i) => {
+                  const pos = timeToPercent(e.timestamp, dayStart);
+                  const isSquat = e.mode === 'fullbody';
+                  return (
+                    <div
+                      key={`e-${s.id}-${i}`}
+                      className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full ${
+                        isSquat ? 'bg-neon-green' : 'bg-neon-purple'
+                      }`}
+                      style={{ left: `${pos}%`, marginLeft: '-5px' }}
+                      title={`${isSquat ? 'スクワット' : '首ストレッチ'} ${new Date(e.timestamp).toLocaleTimeString()}`}
+                    />
+                  );
+                });
+              }
+              // Fallback: legacy squatEvents
+              return (s.squatEvents ?? []).map((e, i) => {
                 const pos = timeToPercent(e.timestamp, dayStart);
                 return (
                   <div
@@ -67,8 +85,8 @@ export function SessionTimeline({ sessions, date }: SessionTimelineProps) {
                     title={`スクワット ${new Date(e.timestamp).toLocaleTimeString()}`}
                   />
                 );
-              }),
-            )}
+              });
+            })}
           </div>
 
           {/* Hour labels */}
@@ -87,7 +105,7 @@ export function SessionTimeline({ sessions, date }: SessionTimelineProps) {
       )}
 
       {/* Legend */}
-      <div className="flex gap-4 mt-3 text-[10px] text-gray-400">
+      <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-gray-400">
         <span className="flex items-center gap-1">
           <span className="inline-block w-3 h-2 bg-neon-blue/40 rounded" />
           セッション
@@ -99,6 +117,10 @@ export function SessionTimeline({ sessions, date }: SessionTimelineProps) {
         <span className="flex items-center gap-1">
           <span className="inline-block w-2 h-2 bg-neon-green rounded-full" />
           スクワット
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 bg-neon-purple rounded-full" />
+          首ストレッチ
         </span>
       </div>
     </div>

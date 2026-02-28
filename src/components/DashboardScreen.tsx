@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeftIcon, ClockIcon, MoonIcon, ZapIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
+import { ArrowLeftIcon, ClockIcon, MoonIcon, ZapIcon, RotateCcwIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
 import { StatCard } from './charts/StatCard';
 import { WeeklyBarChart } from './charts/WeeklyBarChart';
 import { SessionTimeline } from './charts/SessionTimeline';
@@ -46,6 +46,7 @@ export function DashboardScreen({ onBack }: DashboardScreenProps) {
       totalWorkMs: selectedSummary.totalWorkMs,
       totalDrowsy: selectedSummary.totalDrowsy,
       totalSquats: selectedSummary.totalSquats,
+      totalStretches: selectedSummary.totalStretches ?? 0,
     });
     setShareState(ok ? 'sent' : 'error');
     setTimeout(() => setShareState('idle'), 2000);
@@ -113,24 +114,30 @@ export function DashboardScreen({ onBack }: DashboardScreenProps) {
       {/* Scrollable content */}
       <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-8">
         {/* Today's stats */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
+        <div className="grid grid-cols-4 gap-2 mt-4">
           <StatCard
-            icon={<ClockIcon className="w-6 h-6" />}
+            icon={<ClockIcon className="w-5 h-5" />}
             value={formatMs(todaySummary?.totalWorkMs ?? 0)}
             label="作業時間"
             color="text-neon-blue"
           />
           <StatCard
-            icon={<MoonIcon className="w-6 h-6" />}
+            icon={<MoonIcon className="w-5 h-5" />}
             value={String(todaySummary?.totalDrowsy ?? 0)}
             label="居眠り"
             color="text-neon-red"
           />
           <StatCard
-            icon={<ZapIcon className="w-6 h-6" />}
+            icon={<ZapIcon className="w-5 h-5" />}
             value={String(todaySummary?.totalSquats ?? 0)}
             label="スクワット"
             color="text-neon-green"
+          />
+          <StatCard
+            icon={<RotateCcwIcon className="w-5 h-5" />}
+            value={String(todaySummary?.totalStretches ?? 0)}
+            label="首ストレッチ"
+            color="text-neon-purple"
           />
         </div>
 
