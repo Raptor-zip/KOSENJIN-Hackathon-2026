@@ -331,6 +331,7 @@ function App() {
       if (!video) return;
 
       const blob = await captureScreenshot(video);
+      if (!blob) return;
       const imageUrl = URL.createObjectURL(blob);
       const success = await sendDiscordWebhook(message, blob);
       setWebhookToast({ imageUrl, message, success });
