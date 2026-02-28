@@ -1,3 +1,5 @@
+import { EyeIcon, PlayIcon, CameraIcon, VolumeIcon, CpuIcon } from './Icons';
+
 interface StartScreenProps {
   onStart: () => void;
   loading: boolean;
@@ -16,7 +18,7 @@ export function StartScreen({ onStart, loading }: StartScreenProps) {
       <div className="relative z-10 flex flex-col items-center gap-8 px-6">
         {/* Logo / Title */}
         <div className="animate-float text-center">
-          <div className="text-6xl mb-4">👁️</div>
+          <EyeIcon className="w-16 h-16 mx-auto mb-4 text-neon-blue" />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-neon-blue to-neon-purple bg-clip-text text-transparent">
             NEMUNAI
           </h1>
@@ -52,7 +54,7 @@ export function StartScreen({ onStart, loading }: StartScreenProps) {
               </>
             ) : (
               <>
-                <span className="text-2xl">🚀</span>
+                <PlayIcon className="w-6 h-6 text-neon-blue" />
                 <span className="text-xl font-bold text-white">
                   監視スタート
                 </span>
@@ -63,14 +65,17 @@ export function StartScreen({ onStart, loading }: StartScreenProps) {
 
         {/* Info badges */}
         <div className="flex gap-3 mt-4">
-          <span className="px-3 py-1 text-xs bg-dark-surface border border-dark-border rounded-full text-gray-400">
-            📷 カメラ使用
+          <span className="px-3 py-1.5 text-xs bg-dark-surface border border-dark-border rounded-full text-gray-400 flex items-center gap-1.5">
+            <CameraIcon className="w-3.5 h-3.5" />
+            カメラ
           </span>
-          <span className="px-3 py-1 text-xs bg-dark-surface border border-dark-border rounded-full text-gray-400">
-            🔊 音声あり
+          <span className="px-3 py-1.5 text-xs bg-dark-surface border border-dark-border rounded-full text-gray-400 flex items-center gap-1.5">
+            <VolumeIcon className="w-3.5 h-3.5" />
+            音声
           </span>
-          <span className="px-3 py-1 text-xs bg-dark-surface border border-dark-border rounded-full text-gray-400">
-            🤖 AI検知
+          <span className="px-3 py-1.5 text-xs bg-dark-surface border border-dark-border rounded-full text-gray-400 flex items-center gap-1.5">
+            <CpuIcon className="w-3.5 h-3.5" />
+            AI検知
           </span>
         </div>
       </div>

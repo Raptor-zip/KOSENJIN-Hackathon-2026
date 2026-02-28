@@ -1,3 +1,5 @@
+import { AlertTriangleIcon } from './Icons';
+
 interface MonitoringScreenProps {
   ear: number;
   drowsySeconds: number;
@@ -8,16 +10,15 @@ function getDrowsinessLevel(ear: number): {
   label: string;
   color: string;
   bgColor: string;
-  icon: string;
+  dotColor: string;
   percent: number;
 } {
-  // EAR ~0.30+ = wide open, ~0.25 = normal, ~0.20 = threshold, <0.15 = closed
   if (ear >= 0.28) {
     return {
       label: 'ぱっちり',
       color: 'text-neon-green',
       bgColor: 'bg-neon-green',
-      icon: '😃',
+      dotColor: 'bg-neon-green',
       percent: 100,
     };
   }
@@ -26,7 +27,7 @@ function getDrowsinessLevel(ear: number): {
       label: '正常',
       color: 'text-neon-blue',
       bgColor: 'bg-neon-blue',
-      icon: '🙂',
+      dotColor: 'bg-neon-blue',
       percent: 75,
     };
   }
@@ -35,7 +36,7 @@ function getDrowsinessLevel(ear: number): {
       label: '眠そう...',
       color: 'text-yellow-400',
       bgColor: 'bg-yellow-400',
-      icon: '😑',
+      dotColor: 'bg-yellow-400',
       percent: 40,
     };
   }
@@ -43,7 +44,7 @@ function getDrowsinessLevel(ear: number): {
     label: '危険！',
     color: 'text-neon-red',
     bgColor: 'bg-neon-red',
-    icon: '😴',
+    dotColor: 'bg-neon-red',
     percent: 15,
   };
 }
@@ -82,7 +83,7 @@ export function MonitoringScreen({
       {isDrowsy && (
         <div className="flex-1 flex items-center justify-center z-20">
           <div className="text-center animate-pulse">
-            <div className="text-6xl mb-2">⚠️</div>
+            <AlertTriangleIcon className="w-16 h-16 mx-auto mb-3 text-yellow-400" />
             <p className="text-2xl font-bold text-yellow-400">
               眠気を検知中...
             </p>
@@ -99,8 +100,10 @@ export function MonitoringScreen({
       {/* Bottom HUD — drowsiness level */}
       <div className="relative p-4 z-10">
         <div className="bg-dark-surface/90 backdrop-blur rounded-2xl border border-dark-border px-5 py-4 flex items-center gap-4">
-          {/* Icon */}
-          <div className="text-3xl shrink-0">{level.icon}</div>
+          {/* Status dot */}
+          <div className={`w-8 h-8 rounded-full ${level.dotColor} shrink-0 flex items-center justify-center`}>
+            <div className="w-3 h-3 rounded-full bg-dark-bg/40" />
+          </div>
 
           {/* Label + bar */}
           <div className="flex-1 min-w-0">

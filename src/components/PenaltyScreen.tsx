@@ -1,3 +1,5 @@
+import { AlarmIcon } from './Icons';
+
 interface PenaltyScreenProps {
   squatCount: number;
   requiredSquats: number;
@@ -13,14 +15,16 @@ export function PenaltyScreen({
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col pointer-events-none">
-      {/* Thin red border flash instead of full-screen overlay */}
+      {/* Thin red border flash */}
       <div className="absolute inset-0 border-4 border-neon-red/80 animate-flash-red z-30 rounded-sm" />
 
       {/* Compact top banner */}
       <div className="relative z-20 mx-3 mt-3">
         <div className="bg-black/70 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-center gap-3">
-          {/* Emoji + text */}
-          <div className="text-2xl animate-shake">🚨</div>
+          {/* Alarm icon */}
+          <div className="animate-shake">
+            <AlarmIcon className="w-6 h-6 text-neon-red" />
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-neon-red leading-tight">
               スクワット {squatCount}/{requiredSquats}
