@@ -43,3 +43,13 @@ export interface SquatResult {
   landmarks: NormalizedLandmark[];
   fullBodyVisible: boolean;
 }
+
+export type ExerciseMode = 'fullbody' | 'upperbody';
+
+export interface HeadTiltResult {
+  isTilted: boolean;
+  tiltAngle: number;       // degrees, 正=右傾き 負=左傾き
+  landmarks: NormalizedLandmark[];
+  upperBodyVisible: boolean;
+  counted: boolean;
+}

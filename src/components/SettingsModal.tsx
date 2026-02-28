@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { ExerciseMode } from '../types';
 import {
   getWebhookUrl,
   setWebhookUrl,
@@ -8,9 +9,11 @@ import {
 interface SettingsModalProps {
   open: boolean;
   onClose: () => void;
+  exerciseMode: ExerciseMode;
+  onExerciseModeChange: (mode: ExerciseMode) => void;
 }
 
-export function SettingsModal({ open, onClose }: SettingsModalProps) {
+export function SettingsModal({ open, onClose, exerciseMode, onExerciseModeChange }: SettingsModalProps) {
   const [url, setUrl] = useState('');
   const [saved, setSaved] = useState(false);
 
@@ -43,8 +46,38 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
       >
         {/* Header */}
         <h2 className="text-lg font-bold text-white mb-1">設定</h2>
+
+        {/* Exercise mode toggle */}
+        <label className="block text-sm text-gray-300 mb-2">
+          エクササイズモード
+        </label>
+        <div className="flex gap-2 mb-5">
+          <button
+            onClick={() => onExerciseModeChange('fullbody')}
+            className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-bold border transition-colors ${
+              exerciseMode === 'fullbody'
+                ? 'bg-neon-blue/20 border-neon-blue text-neon-blue'
+                : 'bg-dark-bg border-dark-border text-gray-400 hover:text-white'
+            }`}
+          >
+            全身モード
+            <span className="block text-xs font-normal mt-0.5 opacity-70">スクワット</span>
+          </button>
+          <button
+            onClick={() => onExerciseModeChange('upperbody')}
+            className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-bold border transition-colors ${
+              exerciseMode === 'upperbody'
+                ? 'bg-neon-purple/20 border-neon-purple text-neon-purple'
+                : 'bg-dark-bg border-dark-border text-gray-400 hover:text-white'
+            }`}
+          >
+            上半身モード
+            <span className="block text-xs font-normal mt-0.5 opacity-70">首ストレッチ</span>
+          </button>
+        </div>
+
         <p className="text-xs text-gray-400 mb-5">
-          Discord Webhookを設定すると、居眠り検知・スクワット完了時にスクリーンショットが自動送信されます。
+          Discord Webhookを設定すると、居眠り検知・エクササイズ完了時にスクリーンショットが自動送信されます。
         </p>
 
         {/* URL input */}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ExerciseMode } from '../types';
 import { AlarmIcon, AlertTriangleIcon } from './Icons';
 
 const STROKE_SHADOW = '3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000, 0 3px 0 #000, 0 -3px 0 #000, 3px 0 0 #000, -3px 0 0 #000';
@@ -8,6 +9,9 @@ interface PenaltyScreenProps {
   requiredSquats: number;
   isSquatting: boolean;
   fullBodyVisible: boolean;
+  exerciseMode: ExerciseMode;
+  isTilted: boolean;
+  upperBodyVisible: boolean;
 }
 
 export function PenaltyScreen({
@@ -15,6 +19,9 @@ export function PenaltyScreen({
   requiredSquats,
   isSquatting,
   fullBodyVisible,
+  exerciseMode,
+  isTilted,
+  upperBodyVisible,
 }: PenaltyScreenProps) {
   const progress = squatCount / requiredSquats;
   const [popCount, setPopCount] = useState<number | null>(null);
@@ -58,8 +65,8 @@ export function PenaltyScreen({
         </div>
       )}
 
-      {/* Full body not visible warning */}
-      {!fullBodyVisible && (
+      {/* Body not visible warning */}
+      {(exerciseMode === 'fullbody' ? !fullBodyVisible : !upperBodyVisible) && (
         <div className="absolute inset-0 flex items-center justify-center z-50">
           <div className="bg-black/85 backdrop-blur-sm rounded-2xl px-8 py-6 mx-6 text-center border-2 border-yellow-400/60">
             <AlertTriangleIcon className="w-16 h-16 mx-auto mb-3 text-yellow-400" />
@@ -67,15 +74,25 @@ export function PenaltyScreen({
               className="text-3xl font-black text-yellow-400"
               style={{ textShadow: STROKE_SHADOW }}
             >
-              全身を映してください
+              {exerciseMode === 'fullbody' ? '全身を映してください' : '顔と肩を映してください'}
             </p>
             <p
               className="text-lg text-gray-200 mt-2 font-bold"
               style={{ textShadow: STROKE_SHADOW }}
             >
-              頭からつま先まで画面に入るように
-              <br />
-              カメラから離れてください
+              {exerciseMode === 'fullbody' ? (
+                <>
+                  頭からつま先まで画面に入るように
+                  <br />
+                  カメラから離れてください
+                </>
+              ) : (
+                <>
+                  顔と肩が画面に入るように
+                  <br />
+                  カメラの位置を調整してください
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -89,10 +106,13 @@ export function PenaltyScreen({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xl font-black text-neon-red leading-tight">
-              スクワット {squatCount}/{requiredSquats}
+              {exerciseMode === 'fullbody' ? 'スクワット' : '首ストレッチ'} {squatCount}/{requiredSquats}
             </p>
             <p className="text-base text-gray-200 mt-1 font-medium">
-              {isSquatting ? 'しゃがみ検知中...' : 'しゃがんで → 立つ = 1回'}
+              {exerciseMode === 'fullbody'
+                ? (isSquatting ? 'しゃがみ検知中...' : 'しゃがんで → 立つ = 1回')
+                : (isTilted ? '傾き検知中...' : '首を傾けて → 戻す = 1回')
+              }
             </p>
           </div>
           {/* Progress ring */}
@@ -113,6 +133,81 @@ export function PenaltyScreen({
               {squatCount}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Bottom instruction guide */}
+      <div className="relative z-20 mt-auto mx-3 mb-4">
+        <div className="bg-black/75 backdrop-blur-sm rounded-2xl px-5 py-4">
+          {exerciseMode === 'upperbody' ? (
+            <div className="flex items-center gap-4">
+              {/* Animated head tilt demo */}
+              <div className="animate-head-tilt-demo shrink-0">
+                <svg className="w-16 h-16" viewBox="0 0 64 64" fill="none">
+                  {/* Head */}
+                  <circle cx="32" cy="22" r="14" stroke="#a855f7" strokeWidth="2.5" fill="rgba(168,85,247,0.15)" />
+                  {/* Eyes */}
+                  <circle cx="26" cy="20" r="2" fill="#a855f7" />
+                  <circle cx="38" cy="20" r="2" fill="#a855f7" />
+                  {/* Mouth */}
+                  <path d="M27 27 Q32 31 37 27" stroke="#a855f7" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+                  {/* Neck */}
+                  <line x1="32" y1="36" x2="32" y2="46" stroke="#a855f7" strokeWidth="2.5" strokeLinecap="round" />
+                  {/* Shoulders */}
+                  <line x1="18" y1="50" x2="46" y2="50" stroke="#a855f7" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+              </div>
+              {/* Step-by-step instructions */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-6 h-6 rounded-full bg-neon-purple/30 border border-neon-purple text-neon-purple text-xs font-bold flex items-center justify-center shrink-0">1</span>
+                  <span className="text-sm text-white font-bold">首を左 or 右に傾ける</span>
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-1 h-4 ml-[10px] border-l-2 border-dashed border-gray-500" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-neon-green/30 border border-neon-green text-neon-green text-xs font-bold flex items-center justify-center shrink-0">2</span>
+                  <span className="text-sm text-white font-bold">正面に戻す = 1回!</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              {/* Animated squat demo */}
+              <div className="animate-squat-demo shrink-0">
+                <svg className="w-16 h-16" viewBox="0 0 64 64" fill="none">
+                  {/* Head */}
+                  <circle cx="32" cy="10" r="7" stroke="#00d4ff" strokeWidth="2.5" fill="rgba(0,212,255,0.15)" />
+                  {/* Body */}
+                  <line x1="32" y1="17" x2="32" y2="36" stroke="#00d4ff" strokeWidth="2.5" strokeLinecap="round" />
+                  {/* Arms */}
+                  <line x1="32" y1="22" x2="20" y2="30" stroke="#00d4ff" strokeWidth="2.5" strokeLinecap="round" />
+                  <line x1="32" y1="22" x2="44" y2="30" stroke="#00d4ff" strokeWidth="2.5" strokeLinecap="round" />
+                  {/* Legs */}
+                  <line x1="32" y1="36" x2="22" y2="52" stroke="#00d4ff" strokeWidth="2.5" strokeLinecap="round" />
+                  <line x1="32" y1="36" x2="42" y2="52" stroke="#00d4ff" strokeWidth="2.5" strokeLinecap="round" />
+                  {/* Feet */}
+                  <line x1="22" y1="52" x2="18" y2="52" stroke="#00d4ff" strokeWidth="2.5" strokeLinecap="round" />
+                  <line x1="42" y1="52" x2="46" y2="52" stroke="#00d4ff" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+              </div>
+              {/* Step-by-step instructions */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-6 h-6 rounded-full bg-neon-blue/30 border border-neon-blue text-neon-blue text-xs font-bold flex items-center justify-center shrink-0">1</span>
+                  <span className="text-sm text-white font-bold">深くしゃがむ</span>
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-1 h-4 ml-[10px] border-l-2 border-dashed border-gray-500" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-neon-green/30 border border-neon-green text-neon-green text-xs font-bold flex items-center justify-center shrink-0">2</span>
+                  <span className="text-sm text-white font-bold">まっすぐ立つ = 1回!</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

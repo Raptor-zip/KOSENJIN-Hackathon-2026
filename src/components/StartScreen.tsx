@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ExerciseMode } from '../types';
 import { EyeIcon, PlayIcon, CameraIcon, VolumeIcon, CpuIcon, SettingsIcon, ChartIcon } from './Icons';
 import { SettingsModal } from './SettingsModal';
 
@@ -6,9 +7,11 @@ interface StartScreenProps {
   onStart: () => void;
   loading: boolean;
   onDashboard: () => void;
+  exerciseMode: ExerciseMode;
+  onExerciseModeChange: (mode: ExerciseMode) => void;
 }
 
-export function StartScreen({ onStart, loading, onDashboard }: StartScreenProps) {
+export function StartScreen({ onStart, loading, onDashboard, exerciseMode, onExerciseModeChange }: StartScreenProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
@@ -55,7 +58,9 @@ export function StartScreen({ onStart, loading, onDashboard }: StartScreenProps)
           <p className="text-gray-300 text-sm leading-relaxed">
             居眠りを検知したらアラームが鳴り、
             <br />
-            <span className="text-neon-red font-bold">スクワット5回</span>
+            <span className="text-neon-red font-bold">
+              {exerciseMode === 'fullbody' ? 'スクワット5回' : '首ストレッチ5回'}
+            </span>
             で解除できます
           </p>
         </div>
@@ -104,7 +109,12 @@ export function StartScreen({ onStart, loading, onDashboard }: StartScreenProps)
       </div>
 
       {/* Settings modal */}
-      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        exerciseMode={exerciseMode}
+        onExerciseModeChange={onExerciseModeChange}
+      />
     </div>
   );
 }

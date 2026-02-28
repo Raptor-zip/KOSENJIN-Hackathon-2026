@@ -5,11 +5,12 @@ import {
   PoseLandmarker,
 } from '@mediapipe/tasks-vision';
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
-import type { AppState } from './types';
+import type { AppState, ExerciseMode } from './types';
 import { useCamera } from './hooks/useCamera';
 import { useAlarm } from './hooks/useAlarm';
 import { useFaceLandmarker } from './hooks/useFaceLandmarker';
 import { usePoseLandmarker } from './hooks/usePoseLandmarker';
+import { useHeadTiltDetector } from './hooks/useHeadTiltDetector';
 import { StartScreen } from './components/StartScreen';
 import { MonitoringScreen } from './components/MonitoringScreen';
 import { PenaltyScreen } from './components/PenaltyScreen';
@@ -17,6 +18,7 @@ import { DashboardScreen } from './components/DashboardScreen';
 import { captureScreenshot } from './utils/captureScreenshot';
 import { sendDiscordWebhook } from './utils/sendDiscordWebhook';
 import { getWebhookUrl, isValidWebhookUrl } from './utils/webhookSettings';
+import { getExerciseMode, setExerciseMode as saveExerciseMode } from './utils/exerciseModeSettings';
 import { WebhookToast } from './components/WebhookToast';
 import { useSessionLogger } from './hooks/useSessionLogger';
 
@@ -35,6 +37,9 @@ function App() {
   const [isSquatting, setIsSquatting] = useState(false);
   const [kneeAngle, setKneeAngle] = useState(180);
   const [fullBodyVisible, setFullBodyVisible] = useState(true);
+  const [exerciseMode, setExerciseMode] = useState<ExerciseMode>(getExerciseMode);
+  const [isTilted, setIsTilted] = useState(false);
+  const [upperBodyVisible, setUpperBodyVisible] = useState(true);
   const [monitoringStartedAt, setMonitoringStartedAt] = useState(0);
   const [webhookToast, setWebhookToast] = useState<{
     imageUrl: string;
@@ -48,6 +53,7 @@ function App() {
   const { unlockAudio, startAlarm, stopAlarm } = useAlarm();
   const faceLandmarker = useFaceLandmarker();
   const poseLandmarker = usePoseLandmarker();
+  const headTiltDetector = useHeadTiltDetector();
 
   const { startSession, logDrowsiness, logSquatCompletion, endSession } = useSessionLogger();
 
@@ -160,6 +166,11 @@ function App() {
     [syncCanvasSize, clearCanvas, getDrawingUtils],
   );
 
+  const handleExerciseModeChange = useCallback((mode: ExerciseMode) => {
+    setExerciseMode(mode);
+    saveExerciseMode(mode);
+  }, []);
+
   // --- Monitoring loop ---
   const runMonitoringLoop = useCallback(() => {
     const loop = () => {
@@ -263,6 +274,49 @@ function App() {
     animFrameRef.current = requestAnimationFrame(loop);
   }, [poseLandmarker, videoRef, drawPoseLandmarks, clearCanvas]);
 
+  // --- Head tilt penalty loop ---
+  const runHeadTiltPenaltyLoop = useCallback(() => {
+    let localTiltCount = 0;
+
+    const loop = () => {
+      const video = videoRef.current;
+      if (!video || video.readyState < 2) {
+        animFrameRef.current = requestAnimationFrame(loop);
+        return;
+      }
+
+      const now = performance.now();
+      if (now <= lastTimestampRef.current) {
+        animFrameRef.current = requestAnimationFrame(loop);
+        return;
+      }
+      lastTimestampRef.current = now;
+
+      const result = headTiltDetector.detectTilt(video, now);
+
+      if (result) {
+        setIsTilted(result.isTilted);
+        setUpperBodyVisible(result.upperBodyVisible);
+        drawPoseLandmarks(result.landmarks);
+
+        if (result.counted) {
+          localTiltCount++;
+          setSquatCount(localTiltCount);
+
+          if (localTiltCount >= REQUIRED_SQUATS) {
+            cancelAnimationFrame(animFrameRef.current);
+            clearCanvas();
+            setAppState('monitoring');
+            return;
+          }
+        }
+      }
+
+      animFrameRef.current = requestAnimationFrame(loop);
+    };
+    animFrameRef.current = requestAnimationFrame(loop);
+  }, [headTiltDetector, videoRef, drawPoseLandmarks, clearCanvas]);
+
   // --- State transition effects ---
   useEffect(() => {
     const prev = prevAppStateRef.current;
@@ -291,7 +345,7 @@ function App() {
     }
     if (prev === 'penalty' && appState === 'monitoring') {
       logSquatCompletion(REQUIRED_SQUATS);
-      sendWithToast('スクワット5回完了！');
+      sendWithToast(exerciseMode === 'fullbody' ? 'スクワット5回完了！' : '首ストレッチ5回完了！');
     }
     if (prev === 'monitoring' && appState === 'start') {
       endSession();
@@ -309,6 +363,7 @@ function App() {
       stopAlarm();
 
       poseLandmarker.close();
+      headTiltDetector.close();
       faceLandmarker.init().then(() => {
         runMonitoringLoop();
       });
@@ -317,13 +372,22 @@ function App() {
     if (appState === 'penalty') {
       setSquatCount(0);
       setIsSquatting(false);
+      setIsTilted(false);
       lastTimestampRef.current = 0;
       startAlarm();
 
       faceLandmarker.close();
-      poseLandmarker.init().then(() => {
-        runPenaltyLoop();
-      });
+      if (exerciseMode === 'fullbody') {
+        headTiltDetector.close();
+        poseLandmarker.init().then(() => {
+          runPenaltyLoop();
+        });
+      } else {
+        poseLandmarker.close();
+        headTiltDetector.init().then(() => {
+          runHeadTiltPenaltyLoop();
+        });
+      }
     }
 
     return () => {
@@ -358,9 +422,11 @@ function App() {
     cancelAnimationFrame(animFrameRef.current);
     clearCanvas();
     faceLandmarker.close();
+    poseLandmarker.close();
+    headTiltDetector.close();
     stopAlarm();
     setAppState('start');
-  }, [clearCanvas, faceLandmarker, stopAlarm]);
+  }, [clearCanvas, faceLandmarker, poseLandmarker, headTiltDetector, stopAlarm]);
 
   const handleDashboard = useCallback(() => {
     setAppState('dashboard');
@@ -402,7 +468,13 @@ function App() {
 
       {/* State-specific overlays */}
       {appState === 'start' && (
-        <StartScreen onStart={handleStart} loading={loading} onDashboard={handleDashboard} />
+        <StartScreen
+          onStart={handleStart}
+          loading={loading}
+          onDashboard={handleDashboard}
+          exerciseMode={exerciseMode}
+          onExerciseModeChange={handleExerciseModeChange}
+        />
       )}
       {appState === 'dashboard' && (
         <DashboardScreen onBack={handleDashboardBack} />
@@ -422,6 +494,9 @@ function App() {
           requiredSquats={REQUIRED_SQUATS}
           isSquatting={isSquatting}
           fullBodyVisible={fullBodyVisible}
+          exerciseMode={exerciseMode}
+          isTilted={isTilted}
+          upperBodyVisible={upperBodyVisible}
         />
       )}
 
